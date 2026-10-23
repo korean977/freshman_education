@@ -8,9 +8,9 @@
  const gcbInputs=[input('OCR50','OCR 50 · 순시 과전류'),input('OCR51','OCR 51 · 한시 과전류'),input('OCGR50','OCGR 50 · 순시 지락 과전류'),input('OCGR51','OCGR 51 · 한시 지락 과전류')];
  const gas=[input('GAS1','63G1 · 가스압력 1단계 저하','indication'),input('GAS2','63G2 · 가스압력 2단계 저하','trip',true)];
  const defs={
-  '52-R1':{source:'752-52R1 GCB1~4.pdf',relay:'86X',trip:false,
-   note:'사용자 확인: 보호요소·86X 동작으로 자동 트립하지 않습니다. 86X는 투입 허가를 차단합니다. 84X 입력은 외부 접점의 수동 모의입니다.',
-   inputs:[...gcbInputs,input('OVR','OVR · 과전압'),input('UVR','UVR · 부족전압'),input('FIRE','29X · 화재 신호','trip',true),...gas,input('PTX','PTX · PT 퓨즈 이상','indication'),input('EXTINGUISHER','29AL · 소화기 경보','indication')],
+  '52-R1':{source:'52r1.src · G86X(구간 26) / 개방 출력(구간 16)',relay:'G86X',trip:true,
+   note:'52r1.src의 G86X → CB1_52R1_OPEN 경로를 적용합니다. OCR50/51, OCGR50/51, OVR, UVR, 가스압력 2단계 표시기억이 트립 원인입니다. 29X는 경보만 발생합니다. 84X 입력은 외부 접점의 수동 모의입니다.',
+   inputs:[...gcbInputs,input('OVR','OVR · 과전압'),input('UVR','UVR · 내부 동작 신호'),input('FIRE','29X · 화재 신호','indication'),...gas,input('PTX','PTX · PT 퓨즈 이상','indication'),input('EXTINGUISHER','29AL · 소화기 경보','indication')],
    external:[input('R2_84X','52-R2의 84X 입력','external'),input('R3_84X','52-R3의 84X 입력','external')]},
   '52-D1':{source:'752-52D1 GCB1~3.pdf',relay:'G86X',trip:true,
    note:'52-DB1 개방 및 G86X 비동작 시 투입 허가. 26TP와 52-DB1 FAULT는 표시 경로만 확인되어 자동 트립에 추가하지 않았습니다.',
@@ -73,7 +73,7 @@
       if(!previous.get(id))emit(id,'relay',`${id} ${defs[id].relay} 동작 · ${causes.join(', ')}${defs[id].trip?'':' · 자동 트립 없음'}`);
       if(defs[id].trip&&closed(id)){
        devices.get(id).closed=false;changed=true;
-       emit(id,'trip',`${id} 보호 트립 · ${defs[id].relay}`);
+       emit(id,'trip',`${id} 보호 트립 · ${defs[id].relay}${id==='52-R1'?' → CB1_52R1_OPEN':''}`);
       }
      }
      previous.set(id,causes.length>0);

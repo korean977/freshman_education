@@ -44,13 +44,39 @@ test('latched 87T and gas2 remain interlocking until source cleared and reset',(
   assert.equal(model.resetIndicators('52-D1').ok,true);close('52-D1');
  }
 });
-test('R1 protection does not trip, per explicit user confirmation',()=>{
- const {model,devices,events,close}=setup();close('52-R1');
- for(const key of ['OCR50','OCR51','OCGR50','OCGR51','OVR','UVR','FIRE','GAS2'])model.setInput('52-R1',key,true);
- assert.equal(devices.get('52-R1').closed,true);
- assert.equal(events.some(e=>e.id==='52-R1'&&e.kind==='trip'),false);
- assert.equal(model.status('52-R1').active.length>0,true);
- model.request('52-R1');assert.equal(model.request('52-R1').ok,false);
+const r1Source=require('./fixtures/52r1-protection.json');
+test('R1 source G86X OR branches all drive CB1_52R1_OPEN and inhibit reclosing',()=>{
+ for(const symbol of r1Source.g86x.or_inputs){
+  const {model,devices,events,close}=setup();close('89-R1');close('52-R1');
+  const key=r1Source.input_mapping[symbol];
+  model.setInput('52-R1',key,true);
+  assert.equal(devices.get('52-R1').closed,false,symbol+' must trip');
+  assert.equal(devices.get('89-R1').closed,true,'G86X must not invent a DS open command');
+  assert.equal(model.request('52-R1').ok,false,'active cause must inhibit reclosing');
+  const sequence=events.filter(e=>e.id==='52-R1');
+  assert.deepEqual(sequence.slice(1,4).map(e=>e.kind),['input','relay','trip']);
+  assert.match(sequence.find(e=>e.kind==='trip').message,/G86X → CB1_52R1_OPEN/);
+ }
+});
+test('R1 fire, gas1, PT fuse and extinguisher inputs only indicate as in source',()=>{
+ for(const key of r1Source.indication_only_inputs){
+  const {model,devices,events,close}=setup();close('52-R1');model.setInput('52-R1',key,true);
+  assert.equal(devices.get('52-R1').closed,true,key+' must not trip');
+  assert.deepEqual(model.status('52-R1').active,[]);
+  assert.equal(model.status('52-R1').flags.includes(key),true);
+  assert.equal(events.some(e=>e.kind==='trip'),false);
+  model.request('52-R1');close('52-R1');
+ }
+});
+test('R1 cleared OCR permits reclose despite indication; gas2 requires source clear and reset',()=>{
+ const {model,close}=setup();close('52-R1');model.setInput('52-R1','OCR50',true);
+ model.setInput('52-R1','OCR50',false);
+ assert.equal(model.status('52-R1').flags.includes('G86X'),true);close('52-R1');
+ model.setInput('52-R1','GAS2',true);
+ assert.equal(model.resetIndicators('52-R1').ok,false);
+ model.setInput('52-R1','GAS2',false);
+ assert.equal(model.request('52-R1').ok,false);
+ assert.equal(model.resetIndicators('52-R1').ok,true);close('52-R1');
 });
 test('R1 permits exactly the R2/R3 a/b contact truth table',()=>{
  for(const r2 of [false,true])for(const x2 of [false,true])for(const r3 of [false,true])for(const x3 of [false,true]){

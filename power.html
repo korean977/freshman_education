@@ -37,7 +37,7 @@ main{max-width:1440px;margin:auto;padding:32px}.intro{display:flex;align-items:f
  <div class="ac-heading"><h3 id="ac-title">보호계전·인터록 연습</h3><label for="ac-device-select">대상 AC 차단기<select id="ac-device-select"><option value="">설비를 선택하세요</option></select></label></div>
  <p class="ac-intro">계전요소의 ‘동작 접점’을 체크해 반응을 살펴보세요. 운전(RUN) 상태를 기준으로 하며, 전류·전압 정정치를 계산하는 기능은 아닙니다.</p>
  <div id="ac-controls"></div>
- <details class="ac-scope"><summary>적용 범위와 도면 확인이 필요한 부분</summary><p>52-R1, 52-D1, 52-DB1, 52-H1, 52-1(파일명 52S1), 52-HT의 확인된 회로만 적용합니다. 52-R1은 사용자 확인에 따라 86X가 동작해도 자동 트립하지 않습니다. 반대쪽 2호계와 R2·R3 등 도면이 없는 설비는 단순 조작 상태입니다. DB1 투입 허가 우측 분기와 S1 DI35의 A/B 표기는 확인이 필요해 해당 경로를 보류합니다. TEST 우회, 자동 절체, 기계적 인터록과 DC 상세 보호는 아직 모의하지 않습니다. 외부 접점 입력의 초기값은 연습용입니다. 표시기억은 해제해도 실제 원인 신호가 남아 있으면 복귀할 수 없습니다.</p></details>
+ <details class="ac-scope"><summary>적용 범위와 도면 확인이 필요한 부분</summary><p>52-R1, 52-D1, 52-DB1, 52-H1, 52-1(파일명 52S1), 52-HT의 확인된 회로만 적용합니다. 52-R1은 52r1.src 로직에 따라 G86X 동작 시 자동 개방합니다. 29X는 경보만 발생합니다. 반대쪽 2호계와 R2·R3 등 도면이 없는 설비는 단순 조작 상태입니다. DB1 투입 허가 우측 분기와 S1 DI35의 A/B 표기는 확인이 필요해 해당 경로를 보류합니다. TEST 우회, 자동 절체, 기계적 인터록과 DC 상세 보호는 아직 모의하지 않습니다. 외부 접점 입력의 초기값은 연습용입니다. 표시기억은 해제해도 실제 원인 신호가 남아 있으면 복귀할 수 없습니다.</p></details>
 </section>
 <details class="note"><summary>연습 화면의 표시 기준</summary><p>모든 차단기와 단로기가 개방 상태에서 시작합니다. 차단기 색은 투입·개방 상태를, 선로 색은 교육용 모델의 가압·비가압 상태를 나타냅니다. 전원은 한전 수전 1개로 가정하며 온수·상동을 독립 전원으로 계산하지 않습니다. 피뢰기·ATS 상세 회로와 AC 인터록은 제공 도면에서 확인한 조건만 적용합니다. 실제 작업은 승인된 사내 절차를 따라야 합니다.</p></details>
 </div>
@@ -294,7 +294,7 @@ function updateDisplay(){
  deviceSelect.value=d?d.id:'';
  operateButton.disabled=!d;
  if(d){
-  information.innerHTML=`<strong>${d.id}</strong><div class="selection-state"><span>${d.description}</span><span class="state ${d.closed?'on':''}">${d.closed?'투입':'개방'}</span></div><span class="scope-tag">${acModel.definitions[d.id]?'AC 도면 조건 적용':(['89-R1','89-H1','54-1'].includes(d.id)?'AC 연동 조건 적용':'도면 미등록 · 단순 조작')}</span>`;
+  information.innerHTML=`<strong>${d.id}</strong><div class="selection-state"><span>${d.description}</span><span class="state ${d.closed?'on':''}">${d.closed?'투입':'개방'}</span></div><span class="scope-tag">${acModel.definitions[d.id]?(d.id==='52-R1'?'프로젝트 소스 보호 로직 적용':'AC 도면 조건 적용'):(['89-R1','89-H1','54-1'].includes(d.id)?'AC 연동 조건 적용':'도면 미등록 · 단순 조작')}</span>`;
   operateButton.textContent=`${d.id} ${d.closed?'개방하기':'투입하기'}`;
  }else{
   information.textContent='설비를 선택하면 명칭과 현재 상태를 확인할 수 있습니다.';

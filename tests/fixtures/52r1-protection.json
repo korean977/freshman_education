@@ -1,0 +1,53 @@
+{
+  "source": "52r1.src (PKWARE DCL decoded); network ranges cross-checked against 52r1.pci and 52r1.yms",
+  "g86x": {
+    "network": 26,
+    "rows": [
+      71,
+      72,
+      73,
+      74,
+      75,
+      76,
+      77
+    ],
+    "or_inputs": [
+      "OCR50",
+      "OCR51",
+      "OCGR50",
+      "OCGR51",
+      "OVR",
+      "UVR",
+      "G63CB2_F"
+    ]
+  },
+  "cb_open": {
+    "network": 16,
+    "rows": [
+      40,
+      41,
+      42
+    ],
+    "or_inputs": [
+      "MANUAL_52TX",
+      "AUTO_52TX",
+      "G86X"
+    ],
+    "output": "CB1_52R1_OPEN"
+  },
+  "input_mapping": {
+    "OCR50": "OCR50",
+    "OCR51": "OCR51",
+    "OCGR50": "OCGR50",
+    "OCGR51": "OCGR51",
+    "OVR": "OVR",
+    "UVR": "UVR",
+    "G63CB2_F": "GAS2"
+  },
+  "indication_only_inputs": [
+    "FIRE",
+    "GAS1",
+    "PTX",
+    "EXTINGUISHER"
+  ]
+}
