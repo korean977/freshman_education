@@ -3,7 +3,7 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const {create}=require('../ac-protection.js');
 function setup(){
- const ids=['52-R1','52-R2','89-R2','52-R3','89-R1','52-D1','52-DB1','52-DB2','52-HT','52-H1','89-H1','52-1','54-1'];
+ const ids=['52-R1','52-R2','89-R2','52-R3','89-R3','89-R1','52-D1','52-DB1','52-DB2','52-HT','52-H1','89-H1','52-1','54-1'];
  const devices=new Map(ids.map(id=>[id,{id,closed:false}]));
  const events=[];const pending=new Map();let now=0,serial=0;
  const model=create({devices,onEvent:event=>events.push(event),setTimer(fn,ms){const id=++serial;pending.set(id,{fn,at:now+ms});return id;},clearTimer(id){pending.delete(id);}});
@@ -125,7 +125,7 @@ test('DB1 own OCR trips DB1 but is only an indication upstream; 64T remains pend
  assert.equal(model.status('52-D1').received.length,1);
  assert.equal(model.resetIndicators('52-D1').ok,false);
 });
-test('R1 disconnector must not move under its closed CB',()=>{
+test('RUN R1 disconnector direct commands must not move under its closed CB',()=>{
  const {model,devices,close,tick}=setup();close('89-R1');close('52-R1');assert.equal(model.request('89-R1').ok,false);
  model.request('52-R1');tick(8000);assert.equal(devices.get('89-R1').closed,false);
  assert.equal(model.configureR1('position','TEST').ok,true);assert.equal(model.request('89-R1').ok,true);
@@ -151,5 +151,5 @@ test('global reset cancels timers and clears indicators; no delayed trip after r
 });
 test('invalid inputs are rejected; unmodeled devices retain basic operation only',()=>{
  const {model,close}=setup();assert.throws(()=>model.setInput('52-D1','made-up',true));
- assert.equal(model.request('missing').ok,false);close('52-R3');
+ assert.equal(model.request('missing').ok,false);close('52-DB2');
 });

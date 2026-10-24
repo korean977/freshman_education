@@ -5,7 +5,7 @@ const {create}=require('../ac-protection.js');
 const R2=require('../r2-sequence.js');
 const source=require('./fixtures/52r2-sequence.json');
 function setup(){
- const devices=new Map(['52-R1','89-R1','52-R2','89-R2','52-R3','52-D1','52-DB1','52-DB2','52-H1','89-H1','52-1','54-1'].map(id=>[id,{closed:false}]));
+ const devices=new Map(['52-R1','89-R1','52-R2','89-R2','52-R3','89-R3','52-D1','52-DB1','52-DB2','52-H1','89-H1','52-1','54-1'].map(id=>[id,{closed:false}]));
  const events=[],pending=new Map();let now=0,serial=0;
  const m=create({devices,onEvent:e=>events.push({...e,at:now}),setTimer:(fn,ms)=>{const id=++serial;pending.set(id,{fn,at:now+ms});return id},clearTimer:id=>pending.delete(id)});
  function tick(ms){const target=now+ms;for(let i=0;i<300;i++){const due=[...pending.entries()].filter(([,t])=>t.at<=target).sort((a,b)=>a[1].at-b[1].at)[0];if(!due){now=target;return}now=due[1].at;pending.delete(due[0]);due[1].fn();}throw Error('timer loop');}
@@ -88,13 +88,14 @@ test('TEST R2 is individual and disconnected from primary; RUN DS direct is bloc
  assert.equal(m.commandR2('close').ok,true);assert.equal(on('52-R2'),true);assert.equal(on('89-R2'),false);assert.equal(m.isPowerConnected('52-R2'),false);
  m.setInput('52-R2','OCR50',true);assert.equal(on('52-R2'),false);
 });
-test('R2 TEST DS-open output is recorded but confirmed hardware interlock prevents movement under closed CB',()=>{
+test('R2 confirmed TEST DS-open output opens the DS under closed CB; DS closing stays blocked',()=>{
  const {m,on,events}=setup();m.configureR2('position','TEST');m.commandR2('ds-close');m.commandR2('close');
- assert.equal(m.commandR2('ds-close').ok,false);assert.equal(m.checks('89-R2').some(c=>!c.ok&&c.text.includes('52-R2 개방')),true);assert.equal(m.commandR2('ds-open').ok,true);
- assert.equal(on('89-R2'),true);assert.equal(on('52-R2'),true);
+ assert.equal(m.commandR2('ds-close').ok,false);assert.equal(m.checks('89-R2',false).every(c=>c.ok),true);assert.equal(m.commandR2('ds-open').ok,true);
+ assert.equal(on('89-R2'),false);assert.equal(on('52-R2'),true);
+ assert.equal(m.commandR2('ds-close').ok,false);
  assert.equal(events.some(e=>e.kind==='command'&&e.message.includes('PO01_89R2_OPEN')),true);
- assert.equal(events.some(e=>e.kind==='blocked'&&e.message.includes('외부 인터록')),true);
- m.commandR2('open');m.commandR2('ds-open');assert.equal(on('89-R2'),false);
+ assert.equal(events.some(e=>e.kind==='blocked'&&e.message.includes('외부 인터록')),false);
+ m.commandR2('open');m.commandR2('ds-close');assert.equal(on('89-R2'),true);
 });
 test('R2 LOCAL/REMOTE settings and repeat commands are independent from R1',()=>{
  const {m,tick,seq}=setup();m.configureR2('location','REMOTE');assert.equal(seq('52-R1').location,'LOCAL');

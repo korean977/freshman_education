@@ -26,6 +26,8 @@ jobs:
         run: node tests/r1-sequence.test.js
       - name: Verify R2 sequence
         run: node tests/r2-sequence.test.js
+      - name: Verify R3 sequence
+        run: node tests/r3-sequence.test.js
       - name: Package static website
         run: python3 scripts/build_site.py
       - name: Upload website artifact

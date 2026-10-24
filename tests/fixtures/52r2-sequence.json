@@ -148,5 +148,5 @@
       ]
     ]
   },
-  "external_hardware_interlock": "User confirmed: in TEST, 89-R2 cannot move while 52-R2 is closed. Source DS-open output remains observable; mechanical motion requires CB open."
+  "external_hardware_interlock": "User confirmed for R1/R2/R3: in TEST, DS can physically open with its CB closed. TEST DS closing still requires CB open. RUN CB-before-DS opening order remains unchanged."
 }

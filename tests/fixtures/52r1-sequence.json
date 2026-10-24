@@ -50,5 +50,6 @@
     "CB1_52R1_OPEN",
     "PO01_89R1_OPEN"
   ],
-  "84X_timer_enable": "NOT DI31_52R1_84X"
+  "84X_timer_enable": "NOT DI31_52R1_84X",
+  "external_hardware_interlock": "User confirmed for R1/R2/R3: in TEST, DS can physically open with its CB closed. TEST DS closing still requires CB open. RUN CB-before-DS opening order remains unchanged."
 }
