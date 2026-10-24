@@ -86,7 +86,7 @@ test('84X timer uses b contact: normal true does not trip, false trips at 2s',()
  assert.equal(m.request('52-R1').ok,false);assert.equal(m.resetIndicators('52-R1').ok,false);m.setInput('52-R1','R1_84X',true);assert.equal(m.commandR1('close').ok,true);
 });
 test('TEST closes CB individually, bypasses RUN permit and disconnects primary power',()=>{
- const {m,on,devices}=setup();m.configureR1('position','TEST');devices.get('52-R2').closed=true;m.setInput('52-R1','R2_84X',true);
+ const {m,on,devices}=setup();m.configureR1('position','TEST');devices.get('52-R2').closed=true;devices.get('89-R2').closed=true;m.setSource('onsu',true);
  assert.equal(m.commandR1('close').ok,true);assert.equal(on('52-R1'),true);assert.equal(on('89-R1'),false);
  assert.equal(m.isPowerConnected('52-R1'),false);m.setInput('52-R1','OCR50',true);assert.equal(on('52-R1'),false);
 });

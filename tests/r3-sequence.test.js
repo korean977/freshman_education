@@ -22,9 +22,7 @@ test('R3 permit matches all five native parallel branches across 32 combinations
   const values={R3_84X:own,R1_A:r1,R2_A:r2,R2_84X:x2};
   const expected=!gf&&source.permit.branches.some(branch=>branch.every(([name,state])=>values[name]===state));
   assert.equal(R3.permit({r3_84x:own,r1Closed:r1,r2Closed:r2,r2_84x:x2,g86x:gf}),expected);
-  const {m,devices}=setup();devices.get('52-R1').closed=r1;devices.get('52-R2').closed=r2;
-  m.setInput('52-R3','R3_84X',own);m.setInput('52-R3','R2_84X',x2);if(gf)m.setInput('52-R3','OCR50',true);
-  assert.equal(m.commandR3('close').ok,expected);
+
  }
 });
 test('RUN R3 closes DS first, waits 1s, closes CB and confirms for 3s',()=>{
@@ -71,20 +69,26 @@ test('R3 gas2 remains latched until the source is cleared and indication reset',
  m.setInput('52-R3','GAS2',false);assert.equal(m.commandR3('close').ok,false);assert.equal(m.resetIndicators('52-R3').ok,true);
  assert.equal(m.commandR3('close').ok,true);
 });
-test('all panels share R2/R3 84X inputs in every direction',()=>{
- const {m}=setup();
- for(const key of ['R2_84X','R3_84X'])for(const origin of ['52-R1','52-R2','52-R3']){
-  for(const value of [false,true]){
-   m.setInput(origin,key,value);
-   for(const peer of ['52-R1','52-R2','52-R3'])assert.equal(m.status(peer).inputs[key],value,origin+' → '+peer+'/'+key);
-  }
- }
+test('R3 primary-voltage-derived 84X is shared and cannot be manually overridden',()=>{
+ const {m}=setup();m.setSource('sangdong',true);
+ assert.equal(m.status('52-R3').inputs.R3_84X,false,'open DS isolates primary');
+ m.configureSequence('52-R3','position','TEST');m.commandSequence('52-R3','ds-close');
+ for(const id of ['52-R1','52-R2','52-R3'])assert.equal(m.status(id).inputs.R3_84X,true);
+ assert.throws(()=>m.setInput('52-R3','R3_84X',false),/Voltage-derived/);
+ m.setSource('sangdong',false);
+ for(const id of ['52-R1','52-R2','52-R3'])assert.equal(m.status(id).inputs.R3_84X,false);
 });
-test('R3 uses R1 state to permit; R1 uses the shared R3 state and 84X',()=>{
- const {m,tick,on,close}=setup();close();assert.equal(m.commandR1('close').ok,false);
+
+test('R3 line-side voltage and R1 state gate native closing permission',()=>{
+ const {m,tick,on,close}=setup();m.setSource('sangdong',true);close();
+ assert.equal(m.commandR1('close').ok,false);
  m.commandR3('open');tick(8000);assert.equal(m.commandR1('close').ok,true);tick(4000);assert.equal(on('52-R1'),true);
- assert.equal(m.commandR3('close').ok,false);m.setInput('52-R3','R3_84X',false);assert.equal(m.commandR3('close').ok,true);
+ m.configureR3('position','TEST');m.commandR3('ds-close');m.configureR3('position','RUN');
+ assert.equal(m.status('52-R3').inputs.R3_84X,true);assert.equal(m.commandR3('close').ok,false);
+ m.setSource('sangdong',false);assert.equal(m.status('52-R3').inputs.R3_84X,false);
+ assert.equal(m.commandR3('close').ok,true);
 });
+
 test('TEST R3 is individual and disconnected from primary; RUN DS direct is blocked',()=>{
  const {m,devices,on}=setup();assert.equal(m.request('89-R3').ok,false);m.configureR3('position','TEST');devices.get('52-R1').closed=true;
  assert.equal(m.commandR3('close').ok,true);assert.equal(on('52-R3'),true);assert.equal(on('89-R3'),false);assert.equal(m.isPowerConnected('52-R3'),false);
@@ -117,7 +121,7 @@ test('global reset cancels all controller timers, restores independent RUN/LOCAL
  const {m,tick,devices,on,seq,pending}=setup();m.configureR3('location','REMOTE');m.commandR3('close');tick(500);
  for(const d of devices.values())d.closed=false;m.reset();assert.equal(pending.size,0);tick(30000);
  assert.equal(on('52-R3'),false);assert.equal(on('89-R3'),false);assert.equal(seq().location,'LOCAL');assert.equal(seq('52-R1').location,'LOCAL');
- assert.equal(m.status('52-R1').inputs.R3_84X,true);assert.equal(m.status('52-R3').inputs.R3_84X,true);
+ assert.equal(m.status('52-R1').inputs.R3_84X,false);assert.equal(m.status('52-R3').inputs.R3_84X,false);
 });
 test('unsupported R3 source inputs and controllers are rejected',()=>{
  const {m}=setup();assert.throws(()=>m.setInput('52-R3','UVR',true));assert.throws(()=>m.setInput('52-R3','FIRE',true));
@@ -125,23 +129,22 @@ test('unsupported R3 source inputs and controllers are rejected',()=>{
 });
 
 test('native R3 and R2 controllers mutually inhibit with both 84X active, and release after opening',()=>{
- const {m,tick,on,close}=setup();close();
+ const {m,tick,on,close}=setup();m.setSource('onsu',true);m.setSource('sangdong',true);
+ for(const id of ['52-R2','52-R3']){m.configureSequence(id,'position','TEST');m.commandSequence(id,'ds-close');m.configureSequence(id,'position','RUN');}
+ close();
  assert.equal(m.commandR1('close').ok,false);assert.equal(m.commandR2('close').ok,false);
  m.commandR3('open');tick(8000);assert.equal(m.commandR2('close').ok,true);tick(4000);
- assert.equal(on('52-R2'),true);assert.equal(m.commandR3('close').ok,false);
+ assert.equal(on('52-R2'),true);m.configureR3('position','TEST');m.commandR3('ds-close');m.configureR3('position','RUN');assert.equal(m.commandR3('close').ok,false);
  m.commandR2('open');tick(8000);assert.equal(m.commandR3('close').ok,true);tick(4000);
  assert.equal(on('52-R3'),true);assert.equal(on('52-R2'),false);
 });
-test('R3 own 84X and peer R2 84X select distinct native permit branches',()=>{
- for(const [target,own,peerKey] of [['52-R3','R3_84X','R2_84X'],['52-R2','R2_84X','R3_84X']]){
-  const {m,tick,on}=setup();const peer=target==='52-R3'?'52-R2':'52-R3';
-  assert.equal(m.commandSequence(peer,'close').ok,true);tick(4000);assert.equal(on(peer),true);
-  assert.equal(m.commandSequence(target,'close').ok,false);
-  m.setInput(target,peerKey,false);assert.equal(m.commandSequence(target,'close').ok,true);tick(4000);assert.equal(on(target),true);
- }
- const {m,tick}=setup();m.commandR1('close');tick(4000);assert.equal(m.commandR3('close').ok,false);
- m.setInput('52-R3','R3_84X',false);assert.equal(m.commandR3('close').ok,true);
+test('dead R3 primary permits closing with R1 energized; own 84X appears only after backfeed',()=>{
+ const {m,tick,on}=setup();m.commandR1('close');tick(4000);
+ assert.equal(m.status('52-R3').inputs.R3_84X,false);assert.equal(m.commandR3('close').ok,true);
+ assert.equal(m.status('52-R3').inputs.R3_84X,false);tick(1000);assert.equal(on('52-R3'),true);
+ assert.equal(m.status('52-R3').inputs.R3_84X,true);tick(3000);assert.equal(m.status('52-R3').sequence.result,'closed');
 });
+
 test('R1 10s and R3 8s timeouts run independently, including after switching panels',()=>{
  const {m,tick,seq}=setup();
  m.configureR1('failDS',true);m.configureR3('failDS',true);m.configureR3('location','REMOTE');
@@ -154,11 +157,11 @@ test('R3 manual commands route through the diagram request path and reset clears
  const {m,tick,on,devices,seq,pending}=setup();assert.equal(m.request('52-R3').ok,true);tick(4000);assert.equal(on('52-R3'),true);
  assert.equal(m.request('52-R3').ok,true);tick(8000);assert.equal(on('89-R3'),false);
  m.configureR3('position','TEST');assert.equal(m.request('89-R3').ok,true);assert.equal(on('89-R3'),true);
- m.setInput('52-R2','R3_84X',false);m.setInput('52-R3','R2_84X',false);
+ m.setSource('onsu',true);m.setSource('sangdong',true);
  for(const d of devices.values())d.closed=false;m.reset();assert.equal(pending.size,0);tick(30000);
  for(const id of ['52-R1','52-R2','52-R3']){
   assert.equal(seq(id).busy,false);assert.equal(seq(id).position,'RUN');
-  assert.equal(m.status(id).inputs.R2_84X,true);assert.equal(m.status(id).inputs.R3_84X,true);
+  assert.equal(m.status(id).inputs.R2_84X,false);assert.equal(m.status(id).inputs.R3_84X,false);
  }
 });
 

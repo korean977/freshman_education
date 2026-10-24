@@ -78,13 +78,16 @@ test('R1 cleared OCR permits reclose despite indication; gas2 requires source cl
  assert.equal(model.request('52-R1').ok,false);
  assert.equal(model.resetIndicators('52-R1').ok,true);close('52-R1');
 });
-test('R1 permits exactly the R2/R3 a/b contact truth table',()=>{
- for(const r2 of [false,true])for(const x2 of [false,true])for(const r3 of [false,true])for(const x3 of [false,true]){
+test('R1 permit uses primary-voltage-derived R2/R3 84X with their CB contacts',()=>{
+ for(const r2 of [false,true])for(const r3 of [false,true])for(const ds2 of [false,true])for(const ds3 of [false,true])for(const x2 of [false,true])for(const x3 of [false,true]){
   const {model,devices}=setup();devices.get('52-R2').closed=r2;devices.get('52-R3').closed=r3;
-  model.setInput('52-R1','R2_84X',x2);model.setInput('52-R1','R3_84X',x3);
-  assert.equal(model.request('52-R1').ok,(!r2||!x2)&&(!r3||!x3));
+  devices.get('89-R2').closed=ds2;devices.get('89-R3').closed=ds3;
+  model.setSource('onsu',x2);model.setSource('sangdong',x3);
+  const bus=(r2&&ds2&&x2)||(r3&&ds3&&x3),p2=(ds2&&x2)||(r2&&bus),p3=(ds3&&x3)||(r3&&bus);
+  assert.equal(model.request('52-R1').ok,(!r2||!p2)&&(!r3||!p3));
  }
 });
+
 test('HT cannot close with both DB feeders closed; DB1 unresolved HT-on branch remains blocked',()=>{
  const {model,devices,close}=setup();close('52-D1');close('52-DB1');devices.get('52-DB2').closed=true;
  assert.equal(model.request('52-HT').ok,false);

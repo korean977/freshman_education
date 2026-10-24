@@ -22,9 +22,7 @@ test('R2 permit matches all five native parallel branches across 32 combinations
   const values={R2_84X:own,R1_A:r1,R3_A:r3,R3_84X:x3};
   const expected=!gf&&source.permit.branches.some(branch=>branch.every(([name,state])=>values[name]===state));
   assert.equal(R2.permit({r2_84x:own,r1Closed:r1,r3Closed:r3,r3_84x:x3,g86x:gf}),expected);
-  const {m,devices}=setup();devices.get('52-R1').closed=r1;devices.get('52-R3').closed=r3;
-  m.setInput('52-R2','R2_84X',own);m.setInput('52-R2','R3_84X',x3);if(gf)m.setInput('52-R2','OCR50',true);
-  assert.equal(m.commandR2('close').ok,expected);
+
  }
 });
 test('RUN R2 closes DS first, waits 1s, closes CB and confirms for 3s',()=>{
@@ -71,18 +69,26 @@ test('R2 gas2 remains latched until the source is cleared and indication reset',
  m.setInput('52-R2','GAS2',false);assert.equal(m.commandR2('close').ok,false);assert.equal(m.resetIndicators('52-R2').ok,true);
  assert.equal(m.commandR2('close').ok,true);
 });
-test('R1/R2 shared 84X inputs synchronize in both directions',()=>{
- const {m}=setup();assert.equal(m.status('52-R1').inputs.R2_84X,true);assert.equal(m.status('52-R2').inputs.R2_84X,true);
- m.setInput('52-R2','R2_84X',false);assert.equal(m.status('52-R1').inputs.R2_84X,false);
- m.setInput('52-R1','R2_84X',true);assert.equal(m.status('52-R2').inputs.R2_84X,true);
- m.setInput('52-R2','R3_84X',true);assert.equal(m.status('52-R1').inputs.R3_84X,true);
- m.setInput('52-R1','R3_84X',false);assert.equal(m.status('52-R2').inputs.R3_84X,false);
+test('R2 primary-voltage-derived 84X is shared and cannot be manually overridden',()=>{
+ const {m}=setup();m.setSource('onsu',true);
+ assert.equal(m.status('52-R2').inputs.R2_84X,false,'open DS isolates primary');
+ m.configureSequence('52-R2','position','TEST');m.commandSequence('52-R2','ds-close');
+ for(const id of ['52-R1','52-R2','52-R3'])assert.equal(m.status(id).inputs.R2_84X,true);
+ assert.throws(()=>m.setInput('52-R2','R2_84X',false),/Voltage-derived/);
+ m.setSource('onsu',false);
+ for(const id of ['52-R1','52-R2','52-R3'])assert.equal(m.status(id).inputs.R2_84X,false);
 });
-test('R2 uses R1 state to permit; R1 uses the shared R2 state and 84X',()=>{
- const {m,tick,on,close}=setup();close();assert.equal(m.commandR1('close').ok,false);
+
+test('R2 line-side voltage and R1 state gate native closing permission',()=>{
+ const {m,tick,on,close}=setup();m.setSource('onsu',true);close();
+ assert.equal(m.commandR1('close').ok,false);
  m.commandR2('open');tick(8000);assert.equal(m.commandR1('close').ok,true);tick(4000);assert.equal(on('52-R1'),true);
- assert.equal(m.commandR2('close').ok,false);m.setInput('52-R2','R2_84X',false);assert.equal(m.commandR2('close').ok,true);
+ m.configureR2('position','TEST');m.commandR2('ds-close');m.configureR2('position','RUN');
+ assert.equal(m.status('52-R2').inputs.R2_84X,true);assert.equal(m.commandR2('close').ok,false);
+ m.setSource('onsu',false);assert.equal(m.status('52-R2').inputs.R2_84X,false);
+ assert.equal(m.commandR2('close').ok,true);
 });
+
 test('TEST R2 is individual and disconnected from primary; RUN DS direct is blocked',()=>{
  const {m,devices,on}=setup();assert.equal(m.request('89-R2').ok,false);m.configureR2('position','TEST');devices.get('52-R1').closed=true;
  assert.equal(m.commandR2('close').ok,true);assert.equal(on('52-R2'),true);assert.equal(on('89-R2'),false);assert.equal(m.isPowerConnected('52-R2'),false);
@@ -115,7 +121,7 @@ test('global reset cancels both controller timers, restores independent RUN/LOCA
  const {m,tick,devices,on,seq,pending}=setup();m.configureR2('location','REMOTE');m.commandR2('close');tick(500);
  for(const d of devices.values())d.closed=false;m.reset();assert.equal(pending.size,0);tick(30000);
  assert.equal(on('52-R2'),false);assert.equal(on('89-R2'),false);assert.equal(seq().location,'LOCAL');assert.equal(seq('52-R1').location,'LOCAL');
- assert.equal(m.status('52-R1').inputs.R2_84X,true);assert.equal(m.status('52-R2').inputs.R2_84X,true);
+ assert.equal(m.status('52-R1').inputs.R2_84X,false);assert.equal(m.status('52-R2').inputs.R2_84X,false);
 });
 test('unsupported R2 source inputs and controllers are rejected',()=>{
  const {m}=setup();assert.throws(()=>m.setInput('52-R2','UVR',true));assert.throws(()=>m.setInput('52-R2','FIRE',true));

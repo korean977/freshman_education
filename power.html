@@ -17,7 +17,7 @@ main{max-width:1440px;margin:auto;padding:32px}.intro{display:flex;align-items:f
 @media(min-width:1800px){.viewer{max-height:none}}@media(max-width:1000px){.intro{align-items:flex-start;flex-direction:column;gap:18px}.panels{grid-template-columns:1fr 1fr}.panel:last-child{grid-column:1/-1}.header-caption{display:none}}@media(max-width:600px){.header-inner{padding:14px 16px}.brand{font-size:12px}main{padding:24px 12px}.intro{margin-bottom:18px}.eyebrow{font-size:10px}h1{font-size:24px}.subtitle{font-size:13px}.mode-switch{width:100%}.mode-switch button{flex:1;padding:10px}.drawing-card{border-radius:10px}.drawing-toolbar{padding:10px;gap:8px}.drawing-label{font-size:12px}.zoom-tools{width:100%;justify-content:flex-end}.drawing-footer{padding:12px;flex-direction:column;gap:7px}.practice-heading{align-items:flex-start;flex-direction:column;gap:10px}.practice-actions{justify-content:space-between;width:100%}.panels{grid-template-columns:1fr}.panel:last-child{grid-column:auto}.panel{padding:17px}.viewer{max-height:65vh}footer{padding:0 14px 22px;flex-wrap:wrap}.reference-note{font-size:11px}}
 @media(prefers-reduced-motion:no-preference){button{transition:background .15s,color .15s}}
 </style>
-<link rel="stylesheet" href="./ac-training.css?v=22451dcfa136">
+<link rel="stylesheet" href="./ac-training.css?v=5bbc6f640ba4">
 </head>
 <body>
 <header class="site-header"><div class="header-inner"><div class="brand"><span class="brand-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M13 2 5 13h6l-1 9 9-12h-6l1-8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></span>전기분야 신입사원 교육</div><a class="home-link" href="./index.html">← 교육 홈</a></div></header>
@@ -32,22 +32,24 @@ main{max-width:1440px;margin:auto;padding:32px}.intro{display:flex;align-items:f
 <div id="practice-area" hidden>
 <div class="practice-heading"><h2>설비 조작 연습</h2><div class="practice-actions"><span id="count"></span><button id="reset" class="quiet-btn">전체 개방으로 초기화</button></div></div>
 <div class="panels"><section class="panel"><h3>선택한 설비</h3><label class="field-label" for="device-select">도면을 누르거나 설비를 선택하세요</label><select id="device-select"><option value="">설비 선택</option></select><div id="selection"></div><button class="primary-btn" id="operate-selected" disabled>설비를 선택하세요</button></section><section class="panel"><h3>전차선 공급 상태 <span class="badge">교육용 모델</span></h3><div id="supply"></div></section><section class="panel"><h3>조작 이력 <span class="badge">최근 12건</span></h3><ol id="history"></ol></section></div>
+<section class="source-panel" aria-labelledby="source-title"><h3 id="source-title">연계선 전원 · 1차측 전압</h3><div class="source-controls"><label><input type="checkbox" data-source="onsu">온수 측 연계선 가압</label><label><input type="checkbox" data-source="sangdong">상동 측 연계선 가압</label></div><p class="source-help">84는 89 단로기와 52 차단기 사이의 전압을 감지합니다. 무가압이면 비동작이며, 차단기 투입을 통한 모선 측 역가압도 반영합니다. 한전 수전은 가압 상태로 가정합니다.</p><div id="primary-voltage" class="primary-voltage" role="status" aria-live="polite"></div></section>
 <p id="operation-feedback" class="ac-feedback" role="status" hidden></p>
 <section class="ac-panel" aria-labelledby="ac-title">
  <div class="ac-heading"><h3 id="ac-title">보호계전·인터록 연습</h3><label for="ac-device-select">대상 AC 차단기<select id="ac-device-select"><option value="">설비를 선택하세요</option></select></label></div>
  <p class="ac-intro">계전요소의 ‘동작 접점’을 체크해 반응을 살펴보세요. 52-R1·52-R2·52-R3는 각각의 소스에 따른 RUN 시퀀스와 TEST 개별 조작을 지원합니다. 전류·전압 정정치를 계산하는 기능은 아닙니다.</p>
  <div id="ac-controls"></div>
- <details class="ac-scope"><summary>적용 범위와 도면 확인이 필요한 부분</summary><p>52-R1, 52-R2, 52-R3, 52-D1, 52-DB1, 52-H1, 52-1(파일명 52S1), 52-HT의 확인된 회로만 적용합니다. 52-R1은 52r1.src 로직에 따라 G86X 동작 시 자동 개방합니다. 29X는 경보만 발생합니다. D2·DB2·H2·H3 등 소스가 없는 설비는 단순 조작 상태입니다. DB1 투입 허가 우측 분기와 S1 DI35의 A/B 표기는 확인이 필요해 해당 경로를 보류합니다. 52-R1·R2·R3의 명령·피드백 시퀀스와 LOCAL/REMOTE 경로를 모의하며, R2·R3 투입 제한 8초와 UVR1 경보 전용 동작을 구분합니다. 다른 반의 TEST/자동 절체, 기계적 인터록 전체와 DC 상세 보호는 아직 모의하지 않습니다. 외부 접점 입력의 초기값은 연습용입니다. 표시기억은 해제해도 실제 원인 신호가 남아 있으면 복귀할 수 없습니다.</p></details>
+ <details class="ac-scope"><summary>적용 범위와 도면 확인이 필요한 부분</summary><p>52-R1, 52-R2, 52-R3, 52-D1, 52-DB1, 52-H1, 52-1(파일명 52S1), 52-HT의 확인된 회로만 적용합니다. 52-R1은 52r1.src 로직에 따라 G86X 동작 시 자동 개방합니다. 29X는 경보만 발생합니다. D2·DB2·H2·H3 등 소스가 없는 설비는 단순 조작 상태입니다. DB1 투입 허가 우측 분기와 S1 DI35의 A/B 표기는 확인이 필요해 해당 경로를 보류합니다. 52-R1·R2·R3의 명령·피드백 시퀀스와 LOCAL/REMOTE 경로를 모의하며, R2·R3 투입 제한 8초와 UVR1 경보 전용 동작을 구분합니다. 다른 반의 TEST/자동 절체, 기계적 인터록 전체와 DC 상세 보호는 아직 모의하지 않습니다. 연계선 전원은 처음에 무가압이며 R2·R3의 84는 검출점 전압으로 자동 결정됩니다. 나머지 외부 접점의 초기값은 연습용입니다. 표시기억은 해제해도 실제 원인 신호가 남아 있으면 복귀할 수 없습니다.</p></details>
 </section>
-<details class="note"><summary>연습 화면의 표시 기준</summary><p>모든 차단기와 단로기가 개방 상태에서 시작합니다. 차단기 색은 투입·개방 상태를, 선로 색은 교육용 모델의 가압·비가압 상태를 나타냅니다. 전원은 한전 수전 1개로 가정하며 온수·상동을 독립 전원으로 계산하지 않습니다. 피뢰기·ATS 상세 회로와 AC 인터록은 제공 도면에서 확인한 조건만 적용합니다. 실제 작업은 승인된 사내 절차를 따라야 합니다.</p></details>
+<details class="note"><summary>연습 화면의 표시 기준</summary><p>모든 차단기와 단로기가 개방 상태에서 시작합니다. 차단기 색은 투입·개방 상태를, 선로 색은 교육용 모델의 가압·비가압 상태를 나타냅니다. 한전 수전은 가압 상태이며 온수·상동 연계선 전원의 가압 여부를 별도로 설정합니다. R2·R3의 84는 89와 52 사이의 1차측 전압으로 자동 결정됩니다. 피뢰기·ATS 상세 회로는 모의하지 않으며 AC 인터록은 제공 소스·도면과 확인된 조건으로 적용합니다. 실제 작업은 승인된 사내 절차를 따라야 합니다.</p></details>
 </div>
 <p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
 </main><footer><span>전기분야 교육자료</span><span>부천종합운동장 변전소 · 단선계통</span></footer>
+<script src="./power-network.js?v=b4e2fc992d8e"></script>
 <script src="./breaker-sequence.js?v=869fc8139bb7"></script>
 <script src="./r1-sequence.js?v=f5a9b81d53cc"></script>
 <script src="./r2-sequence.js?v=cb41435c86da"></script>
 <script src="./r3-sequence.js?v=551d6e720816"></script>
-<script src="./ac-protection.js?v=7f16d9574685"></script>
+<script src="./ac-protection.js?v=1667caa2724d"></script>
 <script>
 'use strict';
 const WIDTH=1261, HEIGHT=713;
@@ -118,45 +120,15 @@ function element(tag, attrs, parent=overlay) {
  parent.appendChild(e);
  return e;
 }
-function link(a,b,device=null,directed=false){ connections.push({a,b,device,directed}); }
-const connections = [];
-// One-source simplified connectivity model; source tie lines are not assumed energized.
-link('kepco','r1a','89-R1'); link('r1a','r1b'); link('r1b','ac','52-R1');
-link('onsu','r2a','89-R2'); link('r2a','ac','52-R2');
-link('sangdong','r3a','89-R3'); link('r3a','ac','52-R3');
-link('ac','tr1','52-1'); link('tr1','rec1in'); link('rec1in','rec1out',null,true); link('rec1out','dc','54-1');
-link('ac','tr2','52-2'); link('tr2','rec2in'); link('rec2in','rec2out',null,true); link('rec2out','dc','54-2');
-for(let i=1;i<=4;i++) {
- link('dc','f'+i,'54-F'+i);
- link('f'+i,'line'+(i+10),i===1?'89-F1':'F'+i);
- link('bypass','line'+(i+10),'Z'+i);
-}
-link('dc','bypass','54-FS');
-link('ac','dtr1','52-D1'); link('dtr1','auxA','52-DB1');
-link('ac','dtr2','52-D2'); link('dtr2','auxB','52-DB2');
-link('auxA','auxB','52-HT');
-link('auxA','h1','52-H1'); link('auxA','h2','52-H2'); link('auxB','h3','52-H3');
-link('h1','room1','89-H1'); link('h2','room2','89-H2'); link('h3','room3','89-H3');
+function energized(){return new Set(acModel.powerStatus().energized);}
 
-function energized() {
- const hot = new Set(['kepco']); const queue=['kepco'];
- while(queue.length) {
-  const at=queue.shift();
-  for(const e of connections) {
-   if(e.device && !acModel.isPowerConnected(e.device)) continue;
-   const dest = e.a===at ? e.b : (!e.directed && e.b===at ? e.a : null);
-   if(dest && !hot.has(dest)) {hot.add(dest);queue.push(dest);}
-  }
- }
- return hot;
-}
 const paths = [
  // 한전 수전 계통
  {node:'kepco',points:'519,173 519,211'},
  {node:'r1a',points:'519,235 519,248'},
  {node:'r1a',points:'519,261 519,279'},
  {node:'ac',points:'519,327 519,340'},
- // 온수, 상동 외부 연계 계통 (이 두 곳은 독립 전원으로 가정하지 않음)
+ // 온수·상동 연계선: 전원 설정과 스위치 연결 상태에 따른 가압 표시
  {node:'onsu',points:'32,244 144,244 144,256'},
  {node:'r2a',points:'144,273 144,280'},
  {node:'ac',points:'144,326 144,340'},
@@ -284,6 +256,9 @@ function drawTraces(hot){
 }
 function updateDisplay(){
  const hot=energized();
+ const power=acModel.powerStatus();
+ for(const input of document.querySelectorAll('[data-source]'))input.checked=power.sources[input.dataset.source];
+ document.getElementById('primary-voltage').innerHTML=Object.entries(power.primary).map(([id,state])=>`<div class="primary-state ${state.live?'live':''}"><strong>${id} 1차측 ${state.live?'가압':'무가압'}</strong><span>84 ${state.live?'동작 (ON)':'비동작 (OFF)'}</span></div>`).join('');
  drawTraces(hot);drawMarks();
  for(const g of overlay.children){
   const d=byId.get(g.dataset.device);
@@ -375,10 +350,11 @@ for(const id of Object.keys(acModel.definitions)){
  const option=document.createElement('option');option.value=id;option.textContent=id;acSelect.append(option);
 }
 acSelect.addEventListener('change',()=>{selectedId=acSelect.value||null;lastFeedback='';updateDisplay();});
+document.querySelector('.source-controls').addEventListener('change',e=>{if(mode==='practice'&&e.target.matches('[data-source]')){lastFeedback='';acModel.setSource(e.target.dataset.source,e.target.checked);}});
 const escapeText=text=>String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function inputMarkup(input,id){
- const effect=input.effect==='trip'?(acModel.definitions[id].trip?'86X → 보호 트립':'86X 동작 · 자동 트립 없음'):({indication:'표시만',pending:'표시만 · 트립 경로 확인 필요',inhibit:'투입 허가 차단',delayed:'시간 조건 후 트립',external:'외부 접점 수동 입력'})[input.effect];
- return `<label class="ac-input"><input type="checkbox" data-input="${input.key}"><span class="input-text">${escapeText(input.label)}<small class="${input.effect==='pending'?'warn':''}">${effect}${input.held?' · 원인 해제 후 표시기억 복귀 필요':''}</small></span></label>`;
+ const effect=input.effect==='trip'?(acModel.definitions[id].trip?'86X → 보호 트립':'86X 동작 · 자동 트립 없음'):({indication:'표시만',pending:'표시만 · 트립 경로 확인 필요',inhibit:'투입 허가 차단',delayed:'시간 조건 후 트립',external:'외부 접점 수동 입력',voltage:'1차측 전압으로 자동 결정 (직접 변경 불가)'})[input.effect];
+ return `<label class="ac-input"><input type="checkbox" data-input="${input.key}"${input.readOnly?' disabled':''}><span class="input-text">${escapeText(input.label)}<small class="${input.effect==='pending'?'warn':''}">${effect}${input.held?' · 원인 해제 후 표시기억 복귀 필요':''}</small></span></label>`;
 }
 function sequenceMarkup(id,seq){
  const ds=seq.ds,closeSeconds=seq.timing.TON_CX/1000,openSeconds=seq.timing.TON_TX/1000;
@@ -410,7 +386,7 @@ function renderACControls(){
  const def=state.def;
  if(acControls.dataset.device!==id){
   acControls.dataset.device=id;
-  acControls.innerHTML=`${state.sequence?sequenceMarkup(id,state.sequence):''}<div class="ac-grid"><section><h4>현재 조작의 허가 조건</h4><ul class="ac-checks" id="ac-checks"></ul><div class="ac-source">근거: ${escapeText(def.source)}</div></section><section><h4>계전요소 동작 모의</h4><div class="ac-inputs">${def.inputs.length?def.inputs.map(input=>inputMarkup(input,id)).join(''):'<p class="empty">이 도면에는 HT 자체 보호요소가 없습니다.</p>'}</div>${def.external?.length?`<div class="ac-external"><h4>외부 접점 입력</h4><div class="ac-inputs">${def.external.map(input=>inputMarkup(input,id)).join('')}</div></div>`:''}</section><section><h4>계전기 상태·표시기억</h4><div class="ac-status" id="ac-status"></div><p class="ac-flags" id="ac-flags"></p><button class="quiet-btn" id="ac-reset-indicators" type="button">원인 해제 후 표시기억 복귀</button><p class="ac-note">${escapeText(def.note)}</p></section></div>`;
+  acControls.innerHTML=`${state.sequence?sequenceMarkup(id,state.sequence):''}<div class="ac-grid"><section><h4>현재 조작의 허가 조건</h4><ul class="ac-checks" id="ac-checks"></ul><div class="ac-source">근거: ${escapeText(def.source)}</div></section><section><h4>계전요소 동작 모의</h4><div class="ac-inputs">${def.inputs.length?def.inputs.map(input=>inputMarkup(input,id)).join(''):'<p class="empty">이 도면에는 HT 자체 보호요소가 없습니다.</p>'}</div>${def.external?.length?`<div class="ac-external"><h4>전압 감지·외부 접점</h4><div class="ac-inputs">${def.external.map(input=>inputMarkup(input,id)).join('')}</div></div>`:''}</section><section><h4>계전기 상태·표시기억</h4><div class="ac-status" id="ac-status"></div><p class="ac-flags" id="ac-flags"></p><button class="quiet-btn" id="ac-reset-indicators" type="button">원인 해제 후 표시기억 복귀</button><p class="ac-note">${escapeText(def.note)}</p></section></div>`;
  }
  for(const input of acControls.querySelectorAll('[data-input]'))input.checked=!!state.inputs[input.dataset.input];
  document.getElementById('ac-checks').innerHTML=state.checks.map(check=>`<li class="${check.ok?'':'failed'}"><span class="check-icon" aria-label="${check.ok?'충족':'미충족'}">${check.ok?'✓':'!'}</span><span>${escapeText(check.text)}<small class="ac-reference">${escapeText(check.reference)}</small></span></li>`).join('')||'<li>별도 개방 제한 없음</li>';
