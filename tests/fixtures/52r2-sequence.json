@@ -148,5 +148,5 @@
       ]
     ]
   },
-  "external_hardware_pending": "TEST DS-open command has no CB-b gate in project; mechanical opening while CB closed is withheld until external DS interlock drawing is available"
+  "external_hardware_interlock": "User confirmed: in TEST, 89-R2 cannot move while 52-R2 is closed. Source DS-open output remains observable; mechanical motion requires CB open."
 }

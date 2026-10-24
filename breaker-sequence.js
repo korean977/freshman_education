@@ -5,7 +5,7 @@
 (function(root){
  'use strict';
  function create({profile,read,write,emit=()=>{},wake=()=>{},setTimer=setTimeout,clearTimer=clearTimeout}){
-  const {cb,ds,timing:TIMING,undervoltage=false,allowTestDSOpenWithClosedCB=false}=profile;
+  const {cb,ds,timing:TIMING,undervoltage=false,emitTestDSOpenWhileCBClosed=false}=profile;
   const cbSymbol=cb.replace(/-/g,''),dsSymbol=ds.replace(/-/g,'');
   const LABEL={TON_52A:`${cb} 투입 확인 ${TIMING.TON_52A/1000}초`,TON_52B:`${cb} 개방 확인 ${TIMING.TON_52B/1000}초`,TON_89A:`${ds} 투입 확인 ${TIMING.TON_89A/1000}초`,TON_89B:`${ds} 개방 확인 ${TIMING.TON_89B/1000}초`,TON_CX:`투입 명령 제한 ${TIMING.TON_CX/1000}초`,TON_TX:`개방 명령 제한 ${TIMING.TON_TX/1000}초`,TON_27X:'2차 무전압 0.5초',TON_84R1:'84X 접점 해제 2초'};
   let position='RUN',location='LOCAL',cx=false,tx=false,buttons=null,uvr=false,lastResult='idle';
@@ -22,7 +22,7 @@
    if(!['close','open','ds-close','ds-open'].includes(action))return {ok:false,message:'알 수 없는 시퀀스 명령입니다.'};
    if(origin!==location)return {ok:false,message:`현재 조작 위치는 ${location}입니다.`};
    if(action.startsWith('ds-')&&position!=='TEST')return {ok:false,message:`RUN 상태의 ${ds}은 ${cb} 투입·개방 시퀀스로 조작하세요.`};
-   if(action.startsWith('ds-')&&read(cb)&&!(action==='ds-open'&&allowTestDSOpenWithClosedCB))return {ok:false,message:`${ds} 조작 전 ${cb} 개방이 필요합니다.`};
+   if(action.startsWith('ds-')&&read(cb)&&!(action==='ds-open'&&emitTestDSOpenWhileCBClosed))return {ok:false,message:`${ds} 조작 전 ${cb} 개방이 필요합니다.`};
    if((action==='close'&&cx)||(action==='open'&&tx))return {ok:false,message:'같은 시퀀스가 진행 중입니다.'};
    if(action==='close'&&read(cb))return {ok:false,message:`${cb}은 이미 투입되어 있습니다.`};
    buttons={action};lastResult=action.startsWith('ds-')?'manual':action==='close'?'closing':'opening';
@@ -60,7 +60,7 @@
    function act(key,id,target,output,failed){
     if(commands[key]&&!last[key]&&!failed){
      if(id===cb&&target&&(g86x||commands.cbOpen))return;
-     if(id===ds&&read(cb)){if(allowTestDSOpenWithClosedCB&&!target)emit('blocked',`${ds} 개방 출력 발생 · 차단기 투입 중 물리 단로기 조작은 외부 인터록 도면 확인 전 보류합니다.`);return;}
+     if(id===ds&&read(cb)){if(emitTestDSOpenWhileCBClosed&&!target)emit('blocked',`${ds} 외부 인터록 · ${cb} 개방 후 단로기를 조작하세요. 개방 출력과 물리 동작은 구분됩니다.`);return;}
      if(read(id)!==target){write(id,target,output);changed=true;}
     }
    }

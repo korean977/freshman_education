@@ -88,9 +88,9 @@ test('TEST R2 is individual and disconnected from primary; RUN DS direct is bloc
  assert.equal(m.commandR2('close').ok,true);assert.equal(on('52-R2'),true);assert.equal(on('89-R2'),false);assert.equal(m.isPowerConnected('52-R2'),false);
  m.setInput('52-R2','OCR50',true);assert.equal(on('52-R2'),false);
 });
-test('R2 TEST DS-open output is recorded but physical opening under closed CB is withheld',()=>{
+test('R2 TEST DS-open output is recorded but confirmed hardware interlock prevents movement under closed CB',()=>{
  const {m,on,events}=setup();m.configureR2('position','TEST');m.commandR2('ds-close');m.commandR2('close');
- assert.equal(m.commandR2('ds-close').ok,false);assert.equal(m.commandR2('ds-open').ok,true);
+ assert.equal(m.commandR2('ds-close').ok,false);assert.equal(m.checks('89-R2').some(c=>!c.ok&&c.text.includes('52-R2 개방')),true);assert.equal(m.commandR2('ds-open').ok,true);
  assert.equal(on('89-R2'),true);assert.equal(on('52-R2'),true);
  assert.equal(events.some(e=>e.kind==='command'&&e.message.includes('PO01_89R2_OPEN')),true);
  assert.equal(events.some(e=>e.kind==='blocked'&&e.message.includes('외부 인터록')),true);

@@ -16,7 +16,7 @@
    inputs:[...gcbInputs,input('OVR','OVR · 과전압'),input('UVR','UVR · 내부 동작 신호'),input('FIRE','29X · 화재 신호','indication'),...gas,input('PTX','PTX · PT 퓨즈 이상','indication'),input('EXTINGUISHER','29AL · 소화기 경보','indication')],
    external:[{...input('R2_84X','52-R2의 84X 입력 (R2와 연동)','external'),initial:true},input('R3_84X','52-R3의 84X 입력','external'),input('UVR1','UVR1 · 2차 무전압 입력 (0.5초)','external'),{...input('R1_84X','52-R1 84X 정상 접점 (해제 시 2초)','external'),initial:true}]},
   '52-R2':{source:'52r2.src · CX_PERMIT(구간 19) / RUN·TEST / G86X(구간 26)',relay:'G86X',trip:true,
-   note:'R2 소스: 투입 명령 제한 8초, 개방 제한 10초. 89-R2 투입 1초 후 52-R2 투입, 차단기 투입 확인 3초입니다. 개방은 차단기 개방 1초 후 단로기 개방, 단로기 개방 확인 7초입니다. UVR1은 경보만이며 트립하지 않습니다. TEST 단로기 개방 출력의 외부 하드웨어 인터록은 추가 도면 확인 전 물리 조작을 보류합니다.',
+   note:'R2 소스: 투입 명령 제한 8초, 개방 제한 10초. 89-R2 투입 1초 후 52-R2 투입, 차단기 투입 확인 3초입니다. 개방은 차단기 개방 1초 후 단로기 개방, 단로기 개방 확인 7초입니다. UVR1은 경보만이며 트립하지 않습니다. TEST에서도 단로기는 차단기가 개방된 상태에서만 움직입니다. 소스의 개방 출력과 외부 인터록에 따른 물리 동작을 구분합니다.',
    inputs:[...gcbInputs,input('OVR','OVR · 과전압'),...gas,input('UVR1','UVR1 · 무전압 표시·경보 (트립 없음)','indication'),input('PTX','PTX · PT 퓨즈 이상','indication'),input('EXTINGUISHER','29AL · 소화기 경보','indication')],
    external:[{...input('R2_84X','52-R2 자신의 84X 입력 (R1과 연동)','external'),initial:true},input('R3_84X','52-R3의 84X 입력 (R1과 연동)','external')]},
   '52-D1':{source:'752-52D1 GCB1~3.pdf',relay:'G86X',trip:true,
@@ -110,7 +110,9 @@
    const active=outputs().values;
    if(dsController[id]){
     const cb=dsController[id],sequence=sequences[cb],result=[];
-    if(closing||cb==='52-R1')result.push(check(!closed(cb),`${cb} 개방 필요`,`${cb.toLowerCase().replace(/-/g,'')}.src · MANUAL_89CX / 외부 인터록`));
+    const physical=check(!closed(cb),`${cb} 개방 필요`,`${cb.toLowerCase().replace(/-/g,'')}.src · 단로기 외부 인터록`);
+    if(cb==='52-R2'&&!closing)physical.commandGate=false;
+    result.push(physical);
     result.push(check(sequence.status().position==='TEST',`RUN의 ${id}은 ${cb} 시퀀스로 조작하세요`,`${cb.toLowerCase().replace(/-/g,'')}.src · TEST 분기`));
     return result;
    }
@@ -151,7 +153,7 @@
    if(!sequences[id]||typeof action!=='string')return {ok:false,message:'등록된 시퀀스와 명령을 선택하세요.'};
    const target=action.startsWith('ds-')?id.replace('52-','89-'):id;
    const closing=action==='close'||action==='ds-close';
-   const reasons=checks(target,closing).filter(c=>!c.ok);
+   const reasons=checks(target,closing).filter(c=>!c.ok&&c.commandGate!==false);
    if(reasons.length){const message=`${target} 조작 차단 · ${reasons.map(c=>c.text).join(' / ')}`;emit(target,'blocked',message);onChange();return {ok:false,message};}
    const result=sequences[id].issue(action,{origin});
    emit(target,result.ok?'operation':'blocked',result.message);
