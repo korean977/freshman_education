@@ -1,0 +1,54 @@
+{
+  "source": "52r1.src decoded source rows (zero-based)",
+  "timers": {
+    "TON_52A": {
+      "row": 27,
+      "preset": "T#3S",
+      "ms": 3000
+    },
+    "TON_52B": {
+      "row": 30,
+      "preset": "T#1S",
+      "ms": 1000
+    },
+    "TON_89A": {
+      "row": 33,
+      "preset": "T#1S",
+      "ms": 1000
+    },
+    "TON_89B": {
+      "row": 36,
+      "preset": "T#7S",
+      "ms": 7000
+    },
+    "TON_CX": {
+      "row": 56,
+      "preset": "T#10S",
+      "ms": 10000
+    },
+    "TON_TX": {
+      "row": 67,
+      "preset": "T#10S",
+      "ms": 10000
+    },
+    "TON_27X": {
+      "row": 92,
+      "preset": "T#0.5S",
+      "ms": 500
+    },
+    "TON_84R1": {
+      "row": 95,
+      "preset": "T#2S",
+      "ms": 2000
+    }
+  },
+  "close_order": [
+    "PO02_89R1_CLOSE",
+    "CB1_52R1_CLOSE"
+  ],
+  "open_order": [
+    "CB1_52R1_OPEN",
+    "PO01_89R1_OPEN"
+  ],
+  "84X_timer_enable": "NOT DI31_52R1_84X"
+}

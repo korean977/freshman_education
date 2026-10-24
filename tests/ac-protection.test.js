@@ -8,7 +8,7 @@ function setup(){
  const events=[];const pending=new Map();let now=0,serial=0;
  const model=create({devices,onEvent:event=>events.push(event),setTimer(fn,ms){const id=++serial;pending.set(id,{fn,at:now+ms});return id;},clearTimer(id){pending.delete(id);}});
  function tick(ms){const target=now+ms;while(true){const due=[...pending.entries()].filter(([,t])=>t.at<=target).sort((a,b)=>a[1].at-b[1].at)[0];if(!due)break;now=due[1].at;pending.delete(due[0]);due[1].fn();}now=target;}
- const close=id=>{assert.equal(model.request(id).ok,true,id+' should be permitted');assert.equal(devices.get(id).closed,true,id+' should close');};
+ const close=id=>{if(id==='89-R1')assert.equal(model.configureR1('position','TEST').ok,true);assert.equal(model.request(id).ok,true,id+' should be permitted');if(id==='52-R1')tick(4000);assert.equal(devices.get(id).closed,true,id+' should close');if(id==='89-R1')assert.equal(model.configureR1('position','RUN').ok,true);};
  return {model,devices,events,tick,pending,close};
 }
 test('D1/DB1 closing sequence; DB1 must open before manual D1 opening',()=>{
@@ -54,7 +54,7 @@ test('R1 source G86X OR branches all drive CB1_52R1_OPEN and inhibit reclosing',
   assert.equal(devices.get('89-R1').closed,true,'G86X must not invent a DS open command');
   assert.equal(model.request('52-R1').ok,false,'active cause must inhibit reclosing');
   const sequence=events.filter(e=>e.id==='52-R1');
-  assert.deepEqual(sequence.slice(1,4).map(e=>e.kind),['input','relay','trip']);
+  assert.deepEqual(sequence.filter(e=>['input','relay','trip'].includes(e.kind)).map(e=>e.kind),['input','relay','trip']);
   assert.match(sequence.find(e=>e.kind==='trip').message,/G86X → CB1_52R1_OPEN/);
  }
 });
@@ -126,8 +126,9 @@ test('DB1 own OCR trips DB1 but is only an indication upstream; 64T remains pend
  assert.equal(model.resetIndicators('52-D1').ok,false);
 });
 test('R1 disconnector must not move under its closed CB',()=>{
- const {model,close}=setup();close('89-R1');close('52-R1');assert.equal(model.request('89-R1').ok,false);
- model.request('52-R1');assert.equal(model.request('89-R1').ok,true);
+ const {model,devices,close,tick}=setup();close('89-R1');close('52-R1');assert.equal(model.request('89-R1').ok,false);
+ model.request('52-R1');tick(8000);assert.equal(devices.get('89-R1').closed,false);
+ assert.equal(model.configureR1('position','TEST').ok,true);assert.equal(model.request('89-R1').ok,true);
 });
 test('52S1 maps to 52-1; NEG input and AC→HSCB permitting/opening are enforced',()=>{
  const {model,devices,close}=setup();assert.equal(model.request('54-1').ok,false);
