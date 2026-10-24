@@ -5,7 +5,7 @@ const {create}=require('../ac-protection.js');
 const {TIMING}=require('../r1-sequence.js');
 const source=require('./fixtures/52r1-sequence.json');
 function setup(){
- const devices=new Map(['52-R1','89-R1','52-R2','52-R3','52-D1','52-DB1','52-DB2','52-H1','89-H1','52-1','54-1'].map(id=>[id,{closed:false}]));
+ const devices=new Map(['52-R1','89-R1','52-R2','89-R2','52-R3','52-D1','52-DB1','52-DB2','52-H1','89-H1','52-1','54-1'].map(id=>[id,{closed:false}]));
  const events=[],pending=new Map();let now=0,serial=0;
  const m=create({devices,onEvent:e=>events.push({...e,at:now}),setTimer:(fn,ms)=>{const id=++serial;pending.set(id,{fn,at:now+ms});return id},clearTimer:id=>pending.delete(id)});
  function tick(ms){const target=now+ms;for(let i=0;i<200;i++){const due=[...pending.entries()].filter(([,t])=>t.at<=target).sort((a,b)=>a[1].at-b[1].at)[0];if(!due){now=target;return}now=due[1].at;pending.delete(due[0]);due[1].fn();}throw Error('timer loop');}

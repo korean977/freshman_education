@@ -3,7 +3,7 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const {create}=require('../ac-protection.js');
 function setup(){
- const ids=['52-R1','52-R2','52-R3','89-R1','52-D1','52-DB1','52-DB2','52-HT','52-H1','89-H1','52-1','54-1'];
+ const ids=['52-R1','52-R2','89-R2','52-R3','89-R1','52-D1','52-DB1','52-DB2','52-HT','52-H1','89-H1','52-1','54-1'];
  const devices=new Map(ids.map(id=>[id,{id,closed:false}]));
  const events=[];const pending=new Map();let now=0,serial=0;
  const model=create({devices,onEvent:event=>events.push(event),setTimer(fn,ms){const id=++serial;pending.set(id,{fn,at:now+ms});return id;},clearTimer(id){pending.delete(id);}});
@@ -151,5 +151,5 @@ test('global reset cancels timers and clears indicators; no delayed trip after r
 });
 test('invalid inputs are rejected; unmodeled devices retain basic operation only',()=>{
  const {model,close}=setup();assert.throws(()=>model.setInput('52-D1','made-up',true));
- assert.equal(model.request('missing').ok,false);close('52-R2');
+ assert.equal(model.request('missing').ok,false);close('52-R3');
 });

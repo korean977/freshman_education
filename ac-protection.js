@@ -1,11 +1,12 @@
 /* AC sequence training. Drawing names and unresolved paths: docs/ac-sequence-review.md.
  * Inputs represent contacts that have ALREADY operated, not measured fault magnitudes.
- * R1 RUN/TEST sequencing follows its source; other panels remain RUN models.
+ * R1/R2 RUN/TEST sequencing follows each source; other panels remain RUN models.
  * Do not infer relay settings from contact drawings.
  */
 (function (root) {
  'use strict';
  const R1=typeof module!=='undefined'&&module.exports?require('./r1-sequence.js'):root.R1Sequence;
+ const R2=typeof module!=='undefined'&&module.exports?require('./r2-sequence.js'):root.R2Sequence;
  const input=(key,label,effect='trip',held=false)=>({key,label,effect,held});
  const gcbInputs=[input('OCR50','OCR 50 · 순시 과전류'),input('OCR51','OCR 51 · 한시 과전류'),input('OCGR50','OCGR 50 · 순시 지락 과전류'),input('OCGR51','OCGR 51 · 한시 지락 과전류')];
  const gas=[input('GAS1','63G1 · 가스압력 1단계 저하','indication'),input('GAS2','63G2 · 가스압력 2단계 저하','trip',true)];
@@ -13,7 +14,11 @@
   '52-R1':{source:'52r1.src · RUN/TEST 시퀀스·G86X 보호 출력',relay:'G86X',trip:true,
    note:'RUN 투입은 89-R1 → 1초 확인 → 52-R1 → 3초 확인, 개방은 52-R1 → 1초 확인 → 89-R1 → 7초 확인 순서입니다. 명령 제한은 각 10초입니다. TEST에서는 개별 조작하며 주회로에 연결하지 않습니다. G86X는 위치와 관계없이 트립을 우선합니다. 29X는 경보만 발생합니다.',
    inputs:[...gcbInputs,input('OVR','OVR · 과전압'),input('UVR','UVR · 내부 동작 신호'),input('FIRE','29X · 화재 신호','indication'),...gas,input('PTX','PTX · PT 퓨즈 이상','indication'),input('EXTINGUISHER','29AL · 소화기 경보','indication')],
-   external:[input('R2_84X','52-R2의 84X 입력','external'),input('R3_84X','52-R3의 84X 입력','external'),input('UVR1','UVR1 · 2차 무전압 입력 (0.5초)','external'),{...input('R1_84X','52-R1 84X 정상 접점 (해제 시 2초)','external'),initial:true}]},
+   external:[{...input('R2_84X','52-R2의 84X 입력 (R2와 연동)','external'),initial:true},input('R3_84X','52-R3의 84X 입력','external'),input('UVR1','UVR1 · 2차 무전압 입력 (0.5초)','external'),{...input('R1_84X','52-R1 84X 정상 접점 (해제 시 2초)','external'),initial:true}]},
+  '52-R2':{source:'52r2.src · CX_PERMIT(구간 19) / RUN·TEST / G86X(구간 26)',relay:'G86X',trip:true,
+   note:'R2 소스: 투입 명령 제한 8초, 개방 제한 10초. 89-R2 투입 1초 후 52-R2 투입, 차단기 투입 확인 3초입니다. 개방은 차단기 개방 1초 후 단로기 개방, 단로기 개방 확인 7초입니다. UVR1은 경보만이며 트립하지 않습니다. TEST 단로기 개방 출력의 외부 하드웨어 인터록은 추가 도면 확인 전 물리 조작을 보류합니다.',
+   inputs:[...gcbInputs,input('OVR','OVR · 과전압'),...gas,input('UVR1','UVR1 · 무전압 표시·경보 (트립 없음)','indication'),input('PTX','PTX · PT 퓨즈 이상','indication'),input('EXTINGUISHER','29AL · 소화기 경보','indication')],
+   external:[{...input('R2_84X','52-R2 자신의 84X 입력 (R1과 연동)','external'),initial:true},input('R3_84X','52-R3의 84X 입력 (R1과 연동)','external')]},
   '52-D1':{source:'752-52D1 GCB1~3.pdf',relay:'G86X',trip:true,
    note:'52-DB1 개방 및 G86X 비동작 시 투입 허가. 26TP와 52-DB1 FAULT는 표시 경로만 확인되어 자동 트립에 추가하지 않았습니다.',
    inputs:[...gcbInputs,input('87T','87T · 변압기 차동','trip',true),input('FIRE','29X · 화재 신호','trip',true),...gas,input('TR26AL','26AL · DTR1 온도 경보','indication'),input('TR26TP','26TP · DTR1 온도 신호 (트립 경로 확인 필요)','pending'),input('DB1_FAULT','52-DB1 FAULT 입력 (표시 경로)','indication'),input('EXTINGUISHER','29AL · 소화기 경보','indication')]},
@@ -38,11 +43,15 @@
   const st=id=>states.get(id);
   const raw=(id,key)=>!!st(id)?.inputs[key];
   const signal=(id,key)=>raw(id,key)||(defs[id].inputs.find(d=>d.key===key)?.held&&st(id).flags.has(key));
-  const r1=R1.create({read:closed,write:(id,target,output)=>{
-   devices.get(id).closed=target;emit(id,'operation',`${id} ${target?'투입':'개방'} · 시퀀스 ${output}`);
-  },emit:(kind,message)=>emit('52-R1',kind,message),wake:process,setTimer,clearTimer});
+  const makeSequence=(id,profile)=>profile.create({read:closed,write:(target,value,output)=>{
+   devices.get(target).closed=value;emit(target,'operation',`${target} ${value?'투입':'개방'} · 시퀀스 ${output}`);
+  },emit:(kind,message)=>emit(id,kind,message),wake:process,setTimer,clearTimer});
+  const r1=makeSequence('52-R1',R1),r2=makeSequence('52-R2',R2);
+  const sequences={'52-R1':r1,'52-R2':r2};
+  const dsController={'89-R1':'52-R1','89-R2':'52-R2'};
   const r1Permit=active=>(!active.length)&&(!closed('52-R2')||!raw('52-R1','R2_84X'))&&(!closed('52-R3')||!raw('52-R1','R3_84X'));
 
+  const r2Permit=active=>R2.permit({r2_84x:raw('52-R2','R2_84X'),r1Closed:closed('52-R1'),r3Closed:closed('52-R3'),r3_84x:raw('52-R2','R3_84X'),g86x:active.length>0});
   function delay(key,enabled,ms){
    if(!enabled){if(timers.has(key))clearTimer(timers.get(key));timers.delete(key);ready.delete(key);return false;}
    if(ready.has(key))return true;
@@ -71,6 +80,7 @@
    for(let pass=0;pass<12;pass++){
     const {values,db1fault}=outputs();
     let changed=r1.evaluate({permit:r1Permit(values['52-R1']),g86x:values['52-R1'].length>0,uvr1:raw('52-R1','UVR1'),r1_84x:raw('52-R1','R1_84X')});
+    changed=r2.evaluate({permit:r2Permit(values['52-R2']),g86x:values['52-R2'].length>0})||changed;
     if(db1fault&&!st('52-D1').flags.has('52DB1_FAULT (수신)')){
      st('52-D1').flags.add('52DB1_FAULT (수신)');
      emit('52-D1','alarm','52-D1 · 52DB1_FAULT 수신 (표시만, 역방향 트립 없음)');
@@ -82,7 +92,7 @@
       if(!previous.get(id))emit(id,'relay',`${id} ${defs[id].relay} 동작 · ${causes.join(', ')}${defs[id].trip?'':' · 자동 트립 없음'}`);
       if(defs[id].trip&&closed(id)){
        devices.get(id).closed=false;changed=true;
-       emit(id,'trip',`${id} 보호 트립 · ${defs[id].relay}${id==='52-R1'?' → CB1_52R1_OPEN':''}`);
+       emit(id,'trip',`${id} 보호 트립 · ${defs[id].relay}${sequences[id]?' → CB1_'+id.replace(/-/g,'')+'_OPEN':''}`);
       }
      }
      previous.set(id,causes.length>0);
@@ -98,12 +108,13 @@
   const check=(ok,text,reference)=>({ok:!!ok,text,reference});
   function checks(id,closing=!closed(id)){
    const active=outputs().values;
-   if(['89-R1','89-H1'].includes(id)){
-    const cb=id==='89-R1'?'52-R1':'52-H1';
-    const result=[check(!closed(cb),`${cb} 개방 필요`,id==='89-R1'?'52R1 GCB1 · DP1 01, GCB4':'52H1 VCB1 · RX05/RX06, VCB3')];
-    if(id==='89-R1')result.push(check(r1.status().position==='TEST','RUN의 89-R1은 52-R1 시퀀스로 조작하세요','52r1.src · MANUAL_89CX / MANUAL_89TX TEST 분기'));
+   if(dsController[id]){
+    const cb=dsController[id],sequence=sequences[cb],result=[];
+    if(closing||cb==='52-R1')result.push(check(!closed(cb),`${cb} 개방 필요`,`${cb.toLowerCase().replace(/-/g,'')}.src · MANUAL_89CX / 외부 인터록`));
+    result.push(check(sequence.status().position==='TEST',`RUN의 ${id}은 ${cb} 시퀀스로 조작하세요`,`${cb.toLowerCase().replace(/-/g,'')}.src · TEST 분기`));
     return result;
    }
+   if(id==='89-H1')return [check(!closed('52-H1'),'52-H1 개방 필요','52H1 VCB1 · RX05/RX06, VCB3')];
    if(id==='54-1')return closing?[check(closed('52-1'),'52-1 투입 필요','52S1 GCB1 · HSCB CX PERMIT'),check(!raw('52-1','UVR1'),'52-1 UVR1 비동작 필요','52S1 GCB1 · HSCB CX PERMIT')]:[];
    if(!defs[id])return [];
    if(!closing){
@@ -116,6 +127,9 @@
    if(id==='52-R1'&&r1.status().position==='RUN')result.push(
     check(!closed('52-R2')||!raw(id,'R2_84X'),'52-R2 개방 또는 R2 84X 비동작 필요','52R1 GCB1 · CX PERMIT / DI21·DI22'),
     check(!closed('52-R3')||!raw(id,'R3_84X'),'52-R3 개방 또는 R3 84X 비동작 필요','52R1 GCB1 · CX PERMIT / DI23·DI24'));
+   if(id==='52-R2'&&r2.status().position==='RUN')result.push(
+    check(!raw(id,'R2_84X')||!closed('52-R1'),'R2 84X 동작 시 52-R1 개방 필요','52r2.src · CX_PERMIT / 행 47~51'),
+    check(!raw(id,'R2_84X')||!closed('52-R3')||!raw(id,'R3_84X'),'R2 84X 동작 시 R3 개방 또는 R3 84X 비동작 필요','52r2.src · CX_PERMIT / 행 47~51'));
    if(id==='52-D1')result.push(check(!closed('52-DB1'),'52-DB1 개방 필요','52D1 GCB1 · CX PERMIT / DI23 b접점'));
    if(id==='52-DB1')result.push(check(closed('52-D1'),'52-D1 투입 필요','52DB1 VCB1 · CX1 PERMIT / DI21'),check(!closed('52-HT'),'52-HT 개방 경로 사용 · 투입 중 분기는 도면 확인 필요','52DB1 VCB1 · CX1 PERMIT / DI03'));
    if(id==='52-HT')result.push(check(!closed('52-DB1')||!closed('52-DB2'),'52-DB1 또는 52-DB2 중 하나 이상 개방 필요','52DB1 VCB1 · CX2 PERMIT / DI01·DI13 b접점 병렬'));
@@ -125,27 +139,29 @@
   }
   function request(id){
    if(!devices.has(id))return {ok:false,message:'등록되지 않은 설비입니다.'};
-   if(id==='52-R1')return commandR1(closed(id)?'open':'close');
-   if(id==='89-R1')return commandR1(closed(id)?'ds-open':'ds-close');
+   if(sequences[id])return commandSequence(id,closed(id)?'open':'close');
+   if(dsController[id])return commandSequence(dsController[id],closed(id)?'ds-open':'ds-close');
    const reasons=checks(id).filter(c=>!c.ok);
    if(reasons.length){const message=`${id} 조작 차단 · ${reasons.map(c=>c.text).join(' / ')}`;emit(id,'blocked',message);onChange();return {ok:false,message};}
    const d=devices.get(id);d.closed=!d.closed;
    const message=`${id} ${d.closed?'투입':'개방'}`;
    emit(id,'operation',message);process();return {ok:true,message};
   }
-  function commandR1(action,origin){
-   const target=action.startsWith('ds-')?'89-R1':'52-R1';
+  function commandSequence(id,action,origin){
+   if(!sequences[id]||typeof action!=='string')return {ok:false,message:'등록된 시퀀스와 명령을 선택하세요.'};
+   const target=action.startsWith('ds-')?id.replace('52-','89-'):id;
    const closing=action==='close'||action==='ds-close';
    const reasons=checks(target,closing).filter(c=>!c.ok);
    if(reasons.length){const message=`${target} 조작 차단 · ${reasons.map(c=>c.text).join(' / ')}`;emit(target,'blocked',message);onChange();return {ok:false,message};}
-   const result=r1.issue(action,{origin});
+   const result=sequences[id].issue(action,{origin});
    emit(target,result.ok?'operation':'blocked',result.message);
    if(result.ok)process();else onChange();
    return result;
   }
-  function configureR1(key,value){
-   const result=r1.configure(key,value);
-   emit('52-R1',result.ok?'operation':'blocked',result.message);
+  function configureSequence(id,key,value){
+   if(!sequences[id])return {ok:false,message:'등록된 시퀀스를 선택하세요.'};
+   const result=sequences[id].configure(key,value);
+   emit(id,result.ok?'operation':'blocked',result.message);
    if(result.ok)process();else onChange();
    return result;
   }
@@ -155,6 +171,7 @@
    if(!spec)throw new Error('Unknown AC input: '+id+'/'+key);
    const enabled=!!value;if(state.inputs[key]===enabled)return;
    state.inputs[key]=enabled;
+   if(['52-R1','52-R2'].includes(id)&&['R2_84X','R3_84X'].includes(key)){const peer=id==='52-R1'?'52-R2':'52-R1';st(peer).inputs[key]=enabled;}
    if(enabled&&spec.effect!=='external')state.flags.add(key);
    emit(id,'input',`${id} ${key} ${enabled?'동작':'해제'}`);process();
   }
@@ -168,7 +185,7 @@
   }
   function reset(){
    for(const handle of timers.values())clearTimer(handle);
-   timers.clear();ready.clear();previous.clear();r1.reset();
+   timers.clear();ready.clear();previous.clear();for(const sequence of Object.values(sequences))sequence.reset();
    for(const [id,def] of Object.entries(defs)){const state=st(id);state.flags.clear();state.inputs=Object.fromEntries([...def.inputs,...(def.external||[])].map(d=>[d.key,!!d.initial]));}
    onChange();
   }
@@ -179,9 +196,9 @@
    if(id==='52-D1'&&out.db1fault)received.push('52DB1_FAULT 수신 · 표시만');
    if(id==='52-DB1'&&out.values['52-D1'].length)received.push('52D1_FAULT 수신 · 트립 입력');
    if(id==='52-H1'&&out.db27)received.push('DB_27TX 수신 · 트립 입력');
-   return {supported:true,def,received,sequence:id==='52-R1'?r1.status():null,inputs:{...st(id).inputs},flags:[...st(id).flags],active:out.values[id],checks:checks(id),pending:[...timers.keys()].filter(k=>id==='52-DB1'?k==='DB1-27T':id==='52-1'?k==='S1-HSCB':false)};
+   return {supported:true,def,received,sequence:sequences[id]?.status()||null,inputs:{...st(id).inputs},flags:[...st(id).flags],active:out.values[id],checks:checks(id),pending:[...timers.keys()].filter(k=>id==='52-DB1'?k==='DB1-27T':id==='52-1'?k==='S1-HSCB':false)};
   }
-  return {request,commandR1,configureR1,setInput,resetIndicators,reset,status,checks,definitions:defs,isPowerConnected:id=>closed(id)&&(id!=='52-R1'||r1.status().position==='RUN')};
+  return {request,commandSequence,configureSequence,commandR1:(action,origin)=>commandSequence('52-R1',action,origin),configureR1:(key,value)=>configureSequence('52-R1',key,value),commandR2:(action,origin)=>commandSequence('52-R2',action,origin),configureR2:(key,value)=>configureSequence('52-R2',key,value),setInput,resetIndicators,reset,status,checks,definitions:defs,isPowerConnected:id=>closed(id)&&(!sequences[id]||sequences[id].status().position==='RUN')};
  }
  root.ACProtection={create,definitions:defs};
  if(typeof module!=='undefined'&&module.exports)module.exports=root.ACProtection;

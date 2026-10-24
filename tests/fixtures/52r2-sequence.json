@@ -1,0 +1,152 @@
+{
+  "source": "52r2.src; decoded PKWARE DCL; 160 symbols, 73 local addresses and 58 network ranges checked against PCI/YMS",
+  "timers": {
+    "TON_52A": {
+      "row": 27,
+      "preset": "T#3S",
+      "ms": 3000
+    },
+    "TON_52B": {
+      "row": 30,
+      "preset": "T#1S",
+      "ms": 1000
+    },
+    "TON_89A": {
+      "row": 33,
+      "preset": "T#1S",
+      "ms": 1000
+    },
+    "TON_89B": {
+      "row": 36,
+      "preset": "T#7S",
+      "ms": 7000
+    },
+    "TON_CX": {
+      "row": 59,
+      "preset": "T#8S",
+      "ms": 8000
+    },
+    "TON_TX": {
+      "row": 70,
+      "preset": "T#10S",
+      "ms": 10000
+    }
+  },
+  "g86x": {
+    "network": 26,
+    "rows": [
+      74,
+      75,
+      76,
+      77,
+      78,
+      79
+    ],
+    "or_inputs": [
+      "OCR50",
+      "OCR51",
+      "OCGR50",
+      "OCGR51",
+      "OVR",
+      "G63CB2_F"
+    ]
+  },
+  "mapping": {
+    "OCR50": "OCR50",
+    "OCR51": "OCR51",
+    "OCGR50": "OCGR50",
+    "OCGR51": "OCGR51",
+    "OVR": "OVR",
+    "G63CB2_F": "GAS2"
+  },
+  "indication_only_inputs": [
+    "UVR1",
+    "GAS1",
+    "PTX",
+    "EXTINGUISHER"
+  ],
+  "permit": {
+    "network": 19,
+    "rows": [
+      47,
+      48,
+      49,
+      50,
+      51
+    ],
+    "common_nc": "G86X",
+    "branches": [
+      [
+        [
+          "R2_84X",
+          false
+        ],
+        [
+          "R1_A",
+          false
+        ],
+        [
+          "R3_A",
+          true
+        ]
+      ],
+      [
+        [
+          "R2_84X",
+          false
+        ],
+        [
+          "R1_A",
+          true
+        ]
+      ],
+      [
+        [
+          "R2_84X",
+          false
+        ],
+        [
+          "R1_A",
+          false
+        ],
+        [
+          "R3_A",
+          false
+        ]
+      ],
+      [
+        [
+          "R2_84X",
+          true
+        ],
+        [
+          "R1_A",
+          false
+        ],
+        [
+          "R3_A",
+          false
+        ]
+      ],
+      [
+        [
+          "R2_84X",
+          true
+        ],
+        [
+          "R1_A",
+          false
+        ],
+        [
+          "R3_84X",
+          false
+        ],
+        [
+          "R3_A",
+          true
+        ]
+      ]
+    ]
+  },
+  "external_hardware_pending": "TEST DS-open command has no CB-b gate in project; mechanical opening while CB closed is withheld until external DS interlock drawing is available"
+}
