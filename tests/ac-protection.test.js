@@ -78,13 +78,12 @@ test('R1 cleared OCR permits reclose despite indication; gas2 requires source cl
  assert.equal(model.request('52-R1').ok,false);
  assert.equal(model.resetIndicators('52-R1').ok,true);close('52-R1');
 });
-test('R1 permit uses primary-voltage-derived R2/R3 84X with their CB contacts',()=>{
- for(const r2 of [false,true])for(const r3 of [false,true])for(const ds2 of [false,true])for(const ds3 of [false,true])for(const x2 of [false,true])for(const x3 of [false,true]){
+test('R1 permit uses fixed-live R2 and upstream R3 voltage with their CB contacts',()=>{
+ for(const r2 of [false,true])for(const r3 of [false,true])for(const ds2 of [false,true])for(const ds3 of [false,true])for(const line3 of [false,true]){
   const {model,devices}=setup();devices.get('52-R2').closed=r2;devices.get('52-R3').closed=r3;
-  devices.get('89-R2').closed=ds2;devices.get('89-R3').closed=ds3;
-  model.setSource('onsu',x2);model.setSource('sangdong',x3);
-  const bus=(r2&&ds2&&x2)||(r3&&ds3&&x3),p2=(ds2&&x2)||(r2&&bus),p3=(ds3&&x3)||(r3&&bus);
-  assert.equal(model.request('52-R1').ok,(!r2||!p2)&&(!r3||!p3));
+  devices.get('89-R2').closed=ds2;devices.get('89-R3').closed=ds3;model.setSource('sangdong',line3);
+  const bus=(r2&&ds2)||(r3&&ds3&&line3),p3=line3||(r3&&ds3&&bus);
+  assert.equal(model.request('52-R1').ok,!r2&&(!r3||!p3));
  }
 });
 

@@ -71,7 +71,7 @@ test('R3 gas2 remains latched until the source is cleared and indication reset',
 });
 test('R3 primary-voltage-derived 84X is shared and cannot be manually overridden',()=>{
  const {m}=setup();m.setSource('sangdong',true);
- assert.equal(m.status('52-R3').inputs.R3_84X,false,'open DS isolates primary');
+ assert.equal(m.status('52-R3').inputs.R3_84X,true,'upstream line is sensed even with DS open');
  m.configureSequence('52-R3','position','TEST');m.commandSequence('52-R3','ds-close');
  for(const id of ['52-R1','52-R2','52-R3'])assert.equal(m.status(id).inputs.R3_84X,true);
  assert.throws(()=>m.setInput('52-R3','R3_84X',false),/Voltage-derived/);
@@ -129,7 +129,7 @@ test('unsupported R3 source inputs and controllers are rejected',()=>{
 });
 
 test('native R3 and R2 controllers mutually inhibit with both 84X active, and release after opening',()=>{
- const {m,tick,on,close}=setup();m.setSource('onsu',true);m.setSource('sangdong',true);
+ const {m,tick,on,close}=setup();m.setSource('sangdong',true);
  for(const id of ['52-R2','52-R3']){m.configureSequence(id,'position','TEST');m.commandSequence(id,'ds-close');m.configureSequence(id,'position','RUN');}
  close();
  assert.equal(m.commandR1('close').ok,false);assert.equal(m.commandR2('close').ok,false);
@@ -157,11 +157,11 @@ test('R3 manual commands route through the diagram request path and reset clears
  const {m,tick,on,devices,seq,pending}=setup();assert.equal(m.request('52-R3').ok,true);tick(4000);assert.equal(on('52-R3'),true);
  assert.equal(m.request('52-R3').ok,true);tick(8000);assert.equal(on('89-R3'),false);
  m.configureR3('position','TEST');assert.equal(m.request('89-R3').ok,true);assert.equal(on('89-R3'),true);
- m.setSource('onsu',true);m.setSource('sangdong',true);
+ m.setSource('sangdong',true);
  for(const d of devices.values())d.closed=false;m.reset();assert.equal(pending.size,0);tick(30000);
  for(const id of ['52-R1','52-R2','52-R3']){
   assert.equal(seq(id).busy,false);assert.equal(seq(id).position,'RUN');
-  assert.equal(m.status(id).inputs.R2_84X,false);assert.equal(m.status(id).inputs.R3_84X,false);
+  assert.equal(m.status(id).inputs.R2_84X,true);assert.equal(m.status(id).inputs.R3_84X,false);
  }
 });
 

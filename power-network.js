@@ -22,10 +22,10 @@ link('auxA','h1','52-H1'); link('auxA','h2','52-H2'); link('auxB','h3','52-H3');
 link('h1','room1','89-H1'); link('h2','room2','89-H2'); link('h3','room3','89-H3');
 
  Object.freeze(connections);
- const PRIMARY=Object.freeze({'52-R2':'r2a','52-R3':'r3a'});
+ const PRIMARY=Object.freeze({'52-R2':'onsu','52-R3':'sangdong'});
  const SOURCES=Object.freeze([
   Object.freeze({id:'kepco',label:'한전 수전',initial:true,adjustable:false}),
-  Object.freeze({id:'onsu',label:'온수 측 연계선',initial:false,adjustable:true}),
+  Object.freeze({id:'onsu',label:'온수 측 연계선',initial:true,adjustable:false}),
   Object.freeze({id:'sangdong',label:'상동 측 연계선',initial:false,adjustable:true})
  ]);
  function energized({sources,connected}){

@@ -16,15 +16,15 @@
   '52-R1':{source:'52r1.src · RUN/TEST 시퀀스·G86X 보호 출력',relay:'G86X',trip:true,
    note:'RUN 투입은 89-R1 → 1초 확인 → 52-R1 → 3초 확인, 개방은 52-R1 → 1초 확인 → 89-R1 → 7초 확인 순서입니다. 명령 제한은 각 10초입니다. TEST에서는 개별 조작하며 주회로에 연결하지 않습니다. 차단기 투입 중에도 단로기 개방이 가능하며, 단로기 투입은 차단기 개방 후 가능합니다. G86X는 위치와 관계없이 트립을 우선합니다. 29X는 경보만 발생합니다.',
    inputs:[...gcbInputs,input('OVR','OVR · 과전압'),input('UVR','UVR · 내부 동작 신호'),input('FIRE','29X · 화재 신호','indication'),...gas,input('PTX','PTX · PT 퓨즈 이상','indication'),input('EXTINGUISHER','29AL · 소화기 경보','indication')],
-   external:[{...input('R2_84X','52-R2 84 · 1차측 전압 (자동)','voltage'),readOnly:true},{...input('R3_84X','52-R3 84 · 1차측 전압 (자동)','voltage'),readOnly:true},input('UVR1','UVR1 · 2차 무전압 입력 (0.5초)','external'),{...input('R1_84X','52-R1 84X 정상 접점 (해제 시 2초)','external'),initial:true}]},
+   external:[{...input('R2_84X','52-R2 84 · 89-R2 1차측 전압 (자동)','voltage'),readOnly:true},{...input('R3_84X','52-R3 84 · 89-R3 1차측 전압 (자동)','voltage'),readOnly:true},input('UVR1','UVR1 · 2차 무전압 입력 (0.5초)','external'),{...input('R1_84X','52-R1 84X 정상 접점 (해제 시 2초)','external'),initial:true}]},
   '52-R2':{source:'52r2.src · CX_PERMIT(구간 19) / RUN·TEST / G86X(구간 26)',relay:'G86X',trip:true,
-   note:'84는 89-R2와 52-R2 사이의 1차측 전압을 감지하며 무가압이면 비동작합니다. R2 소스: 투입 명령 제한 8초, 개방 제한 10초. 89-R2 투입 1초 후 52-R2 투입, 차단기 투입 확인 3초입니다. 개방은 차단기 개방 1초 후 단로기 개방, 단로기 개방 확인 7초입니다. UVR1은 경보만이며 트립하지 않습니다. TEST에서는 차단기 투입 중에도 89-R2 개방이 가능합니다. 단로기 투입은 차단기 개방 상태에서만 허용합니다.',
+   note:'84는 89-R2 1차측 전압을 감지합니다. 온수 측 공급으로 항상 가압·동작 상태입니다. R2 소스: 투입 명령 제한 8초, 개방 제한 10초. 89-R2 투입 1초 후 52-R2 투입, 차단기 투입 확인 3초입니다. 개방은 차단기 개방 1초 후 단로기 개방, 단로기 개방 확인 7초입니다. UVR1은 경보만이며 트립하지 않습니다. TEST에서는 차단기 투입 중에도 89-R2 개방이 가능합니다. 단로기 투입은 차단기 개방 상태에서만 허용합니다.',
    inputs:[...gcbInputs,input('OVR','OVR · 과전압'),...gas,input('UVR1','UVR1 · 무전압 표시·경보 (트립 없음)','indication'),input('PTX','PTX · PT 퓨즈 이상','indication'),input('EXTINGUISHER','29AL · 소화기 경보','indication')],
-   external:[{...input('R2_84X','52-R2 84 · 1차측 전압 (자동)','voltage'),readOnly:true},{...input('R3_84X','52-R3 84 · 1차측 전압 (자동)','voltage'),readOnly:true}]},
+   external:[{...input('R2_84X','52-R2 84 · 89-R2 1차측 전압 (자동)','voltage'),readOnly:true},{...input('R3_84X','52-R3 84 · 89-R3 1차측 전압 (자동)','voltage'),readOnly:true}]},
   '52-R3':{source:'52r3.src · CX_PERMIT(구간 19) / RUN·TEST / G86X(구간 26)',relay:'G86X',trip:true,
-   note:'84는 89-R3와 52-R3 사이의 1차측 전압을 감지하며 무가압이면 비동작합니다. R3 소스: 투입 명령 제한 8초, 개방 제한 10초. 89-R3 투입 1초 후 52-R3 투입, 차단기 투입 확인 3초입니다. 개방은 차단기 개방 1초 후 단로기 개방, 단로기 개방 확인 7초입니다. UVR1은 경보만이며 트립하지 않습니다. TEST에서는 차단기 투입 중에도 89-R3 개방이 가능합니다. 단로기 투입은 차단기 개방 상태에서만 허용합니다. RUN 개방은 차단기부터 개방합니다.',
+   note:'84는 89-R3 1차측 전압을 감지하며 그 지점이 무가압이면 비동작합니다. R3 소스: 투입 명령 제한 8초, 개방 제한 10초. 89-R3 투입 1초 후 52-R3 투입, 차단기 투입 확인 3초입니다. 개방은 차단기 개방 1초 후 단로기 개방, 단로기 개방 확인 7초입니다. UVR1은 경보만이며 트립하지 않습니다. TEST에서는 차단기 투입 중에도 89-R3 개방이 가능합니다. 단로기 투입은 차단기 개방 상태에서만 허용합니다. RUN 개방은 차단기부터 개방합니다.',
    inputs:[...gcbInputs,input('OVR','OVR · 과전압'),...gas,input('UVR1','UVR1 · 무전압 표시·경보 (트립 없음)','indication'),input('PTX','PTX · PT 퓨즈 이상','indication'),input('EXTINGUISHER','29AL · 소화기 경보','indication')],
-   external:[{...input('R3_84X','52-R3 84 · 1차측 전압 (자동)','voltage'),readOnly:true},{...input('R2_84X','52-R2 84 · 1차측 전압 (자동)','voltage'),readOnly:true}]},
+   external:[{...input('R3_84X','52-R3 84 · 89-R3 1차측 전압 (자동)','voltage'),readOnly:true},{...input('R2_84X','52-R2 84 · 89-R2 1차측 전압 (자동)','voltage'),readOnly:true}]},
   '52-D1':{source:'752-52D1 GCB1~3.pdf',relay:'G86X',trip:true,
    note:'52-DB1 개방 및 G86X 비동작 시 투입 허가. 26TP와 52-DB1 FAULT는 표시 경로만 확인되어 자동 트립에 추가하지 않았습니다.',
    inputs:[...gcbInputs,input('87T','87T · 변압기 차동','trip',true),input('FIRE','29X · 화재 신호','trip',true),...gas,input('TR26AL','26AL · DTR1 온도 경보','indication'),input('TR26TP','26TP · DTR1 온도 신호 (트립 경로 확인 필요)','pending'),input('DB1_FAULT','52-DB1 FAULT 입력 (표시 경로)','indication'),input('EXTINGUISHER','29AL · 소화기 경보','indication')]},
@@ -63,7 +63,7 @@
    for(const [id,node] of Object.entries(Network.PRIMARY)){
     const key=id.replace('52-','')+'_84X',live=hot.has(node),old=raw(id,key);
     for(const peer of Object.keys(sequences))st(peer).inputs[key]=live;
-    if(notify&&old!==live)emit(id,'voltage',`${id} 1차측 ${live?'가압':'무가압'} · 84 ${live?'동작':'비동작'}`);
+    if(notify&&old!==live)emit(id,'voltage',`${id.replace('52-','89-')} 1차측 ${live?'가압':'무가압'} · ${id} 84 ${live?'동작':'비동작'}`);
    }
    return hot;
   }
@@ -164,11 +164,11 @@
     check(!closed('52-R2')||!raw(id,'R2_84X'),'52-R2 개방 또는 R2 84X 비동작 필요','52R1 GCB1 · CX PERMIT / DI21·DI22'),
     check(!closed('52-R3')||!raw(id,'R3_84X'),'52-R3 개방 또는 R3 84X 비동작 필요','52R1 GCB1 · CX PERMIT / DI23·DI24'));
    if(id==='52-R2'&&r2.status().position==='RUN')result.push(
-    check(!raw(id,'R2_84X')||!closed('52-R1'),'R2 1차측 가압(84 동작) 시 52-R1 개방 필요','52r2.src · CX_PERMIT / 행 47~51'),
-    check(!raw(id,'R2_84X')||!closed('52-R3')||!raw(id,'R3_84X'),'R2 1차측 가압(84 동작) 시 R3 개방 또는 R3 84X 비동작 필요','52r2.src · CX_PERMIT / 행 47~51'));
+    check(!raw(id,'R2_84X')||!closed('52-R1'),'89-R2 1차측 가압(84 동작) 시 52-R1 개방 필요','52r2.src · CX_PERMIT / 행 47~51'),
+    check(!raw(id,'R2_84X')||!closed('52-R3')||!raw(id,'R3_84X'),'89-R2 1차측 가압(84 동작) 시 R3 개방 또는 R3 84X 비동작 필요','52r2.src · CX_PERMIT / 행 47~51'));
    if(id==='52-R3'&&r3.status().position==='RUN')result.push(
-    check(!raw(id,'R3_84X')||!closed('52-R1'),'R3 1차측 가압(84 동작) 시 52-R1 개방 필요','52r3.src · CX_PERMIT / 행 47~51'),
-    check(!raw(id,'R3_84X')||!closed('52-R2')||!raw(id,'R2_84X'),'R3 1차측 가압(84 동작) 시 R2 개방 또는 R2 84X 비동작 필요','52r3.src · CX_PERMIT / 행 47~51'));
+    check(!raw(id,'R3_84X')||!closed('52-R1'),'89-R3 1차측 가압(84 동작) 시 52-R1 개방 필요','52r3.src · CX_PERMIT / 행 47~51'),
+    check(!raw(id,'R3_84X')||!closed('52-R2')||!raw(id,'R2_84X'),'89-R3 1차측 가압(84 동작) 시 R2 개방 또는 R2 84X 비동작 필요','52r3.src · CX_PERMIT / 행 47~51'));
    if(id==='52-D1')result.push(check(!closed('52-DB1'),'52-DB1 개방 필요','52D1 GCB1 · CX PERMIT / DI23 b접점'));
    if(id==='52-DB1')result.push(check(closed('52-D1'),'52-D1 투입 필요','52DB1 VCB1 · CX1 PERMIT / DI21'),check(!closed('52-HT'),'52-HT 개방 경로 사용 · 투입 중 분기는 도면 확인 필요','52DB1 VCB1 · CX1 PERMIT / DI03'));
    if(id==='52-HT')result.push(check(!closed('52-DB1')||!closed('52-DB2'),'52-DB1 또는 52-DB2 중 하나 이상 개방 필요','52DB1 VCB1 · CX2 PERMIT / DI01·DI13 b접점 병렬'));
