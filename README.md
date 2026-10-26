@@ -12,6 +12,8 @@
 
 52-1은 [52s1 소스 기록](docs/52s1-source-logic.md)에 따른 RUN/TEST·LOCAL/REMOTE 직접 조작과 54-1 AC 연동을 지원합니다. HSCB 고장 신호는 즉시 시작하는 1초 TP 펄스로 트립하며, RUN 투입은 NEG 투입·54-1 개방 조건을, RUN 수동 개방은 54-1 개방 조건을 사용합니다.
 
+나머지 8개 반(52-2·D1·D2·DB1·DB2·H1·H2·H3)은 압축파일의 실제 접점망 395개 구간을 실행합니다. HT는 DB1의 CB2 명령과 연결됩니다. 보호·인터록·타이머·표시기억·경보 및 부저 출력을 지원하며, [압축파일 소스 적용 기록](docs/station-logic-review.md)에 차이와 재생성 방법을 정리했습니다. H1·H2·H3의 소스상 UVR1은 투입 허가에 ON이 필요한 a접점이며, H2·H3의 최초 단로기 투입은 TEST에서 진행합니다.
+
 ## 검증 및 배포 파일
 
 ```sh
@@ -21,6 +23,7 @@ node tests/r2-sequence.test.js
 node tests/r3-sequence.test.js
 node tests/primary-voltage.test.js
 node tests/s1-sequence.test.js
+node tests/station-sequence.test.js
 python3 scripts/build_site.py
 ```
 

@@ -3,7 +3,7 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const {create}=require('../ac-protection.js');
 function setup(){
- const ids=['52-R1','52-R2','89-R2','52-R3','89-R3','89-R1','52-D1','52-DB1','52-DB2','52-HT','52-H1','89-H1','52-1','54-1'];
+ const ids=['52-R1','52-R2','89-R2','52-R3','89-R3','89-R1','52-D2','52-D1','52-DB1','52-DB2','52-HT','52-H1','89-H1','52-1','54-1'];
  const devices=new Map(ids.map(id=>[id,{id,closed:false}]));
  const events=[];const pending=new Map();let now=0,serial=0;
  const model=create({devices,onEvent:event=>events.push(event),setTimer(fn,ms){const id=++serial;pending.set(id,{fn,at:now+ms});return id;},clearTimer(id){pending.delete(id);}});
@@ -29,11 +29,12 @@ test('D1 protection bypasses manual interlock and trips DB1 through D1 FAULT',()
  model.setInput('52-D1','OCR50',false);
  close('52-D1'); // An indication _F is not an active 86X interlock.
 });
-test('alarm-only and unresolved D1 temperature path do not invent trips',()=>{
+test('D1 alarm-only contacts do not trip; source-confirmed 26TP trips immediately',()=>{
  const {model,devices,close}=setup();close('52-D1');
- for(const key of ['GAS1','TR26AL','TR26TP','DB1_FAULT','EXTINGUISHER'])model.setInput('52-D1',key,true);
+ for(const key of ['GAS1','TR26AL','DB1_FAULT','EXTINGUISHER'])model.setInput('52-D1',key,true);
  assert.equal(devices.get('52-D1').closed,true);
  assert.equal(model.status('52-D1').active.length,0);
+ model.setInput('52-D1','TR26TP',true);assert.equal(devices.get('52-D1').closed,false);
 });
 test('latched 87T and gas2 remain interlocking until source cleared and reset',()=>{
  for(const key of ['87T','GAS2']){
@@ -87,27 +88,27 @@ test('R1 permit uses fixed-live R2 and upstream R3 voltage with their CB contact
  }
 });
 
-test('HT cannot close with both DB feeders closed; DB1 unresolved HT-on branch remains blocked',()=>{
+test('HT blocks paralleling both DB feeders; source permits DB1 with HT on and DB2 open',()=>{
  const {model,devices,close}=setup();close('52-D1');close('52-DB1');devices.get('52-DB2').closed=true;
  assert.equal(model.request('52-HT').ok,false);
  devices.get('52-DB2').closed=false;close('52-HT');model.request('52-DB1');
- assert.equal(model.request('52-DB1').ok,false);
- assert.match(model.checks('52-DB1').find(c=>!c.ok).text,/도면 확인/);
+ assert.equal(model.request('52-DB1').ok,true);
+ assert.equal(devices.get('52-DB1').closed,true);
 });
 test('H1 requires 89-H1 and its disconnector cannot move while H1 closed',()=>{
  const {model,close}=setup();assert.equal(model.request('52-H1').ok,false);
- close('89-H1');close('52-H1');assert.equal(model.request('89-H1').ok,false);
+ close('89-H1');model.setInput('52-H1','UVR1',true);close('52-H1');assert.equal(model.request('89-H1').ok,false);
  model.setInput('52-H1','SGR',true);
  assert.equal(model.request('89-H1').ok,true);
  assert.equal(model.resetIndicators('52-H1').ok,false);
 });
-test('H1 UVR1 inhibits closing but does not invent its own trip path',()=>{
- const {model,devices,close}=setup();close('89-H1');close('52-H1');
- model.setInput('52-H1','UVR1',true);assert.equal(devices.get('52-H1').closed,true);
+test('H1 source UVR1 a-contact permits closing and does not trip',()=>{
+ const {model,devices,close}=setup();close('89-H1');model.setInput('52-H1','UVR1',true);close('52-H1');
+ model.setInput('52-H1','UVR1',false);assert.equal(devices.get('52-H1').closed,true);
  model.request('52-H1');assert.equal(model.request('52-H1').ok,false);
 });
 test('DB1 27T waits 0.5 seconds; one pulse trips DB1 and H1',()=>{
- const {model,devices,close,tick,events}=setup();close('52-D1');close('52-DB1');close('89-H1');close('52-H1');
+ const {model,devices,close,tick,events}=setup();close('52-D1');close('52-DB1');close('89-H1');model.setInput('52-H1','UVR1',true);close('52-H1');
  model.setInput('52-DB1','UVR1',true);tick(499);
  assert.equal(devices.get('52-DB1').closed,true);assert.equal(devices.get('52-H1').closed,true);
  tick(1);assert.equal(devices.get('52-DB1').closed,false);assert.equal(devices.get('52-H1').closed,false);
@@ -120,7 +121,7 @@ test('DB1 27T does not run with CB open and cancels short inputs',()=>{
  close('52-D1');close('52-DB1');tick(250);model.setInput('52-DB1','UVR1',false);tick(1000);
  assert.equal(devices.get('52-DB1').closed,true);
 });
-test('DB1 own OCR trips DB1 but is only an indication upstream; 64T remains pending',()=>{
+test('DB1 own OCR trips DB1 but is only an indication upstream; source 64T is alarm-only',()=>{
  const {model,devices,close}=setup();close('52-D1');close('52-DB1');
  model.setInput('52-DB1','64T',true);assert.equal(devices.get('52-DB1').closed,true);
  model.setInput('52-DB1','OCR51',true);assert.equal(devices.get('52-DB1').closed,false);assert.equal(devices.get('52-D1').closed,true);
@@ -151,7 +152,7 @@ test('global reset cancels timers and clears indicators; no delayed trip after r
  assert.equal(devices.get('52-1').closed,false);assert.deepEqual(model.status('52-1').flags,[]);
  assert.equal(model.status('52-1').inputs.NEG_A,true);
 });
-test('invalid inputs are rejected; unmodeled devices retain basic operation only',()=>{
+test('invalid inputs are rejected; DB2 now uses its source and requires D2',()=>{
  const {model,close}=setup();assert.throws(()=>model.setInput('52-D1','made-up',true));
- assert.equal(model.request('missing').ok,false);close('52-DB2');
+ assert.equal(model.request('missing').ok,false);assert.equal(model.request('52-DB2').ok,false);close('52-D2');close('52-DB2');
 });
