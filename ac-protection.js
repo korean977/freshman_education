@@ -8,6 +8,7 @@
  const R1=typeof module!=='undefined'&&module.exports?require('./r1-sequence.js'):root.R1Sequence;
  const R2=typeof module!=='undefined'&&module.exports?require('./r2-sequence.js'):root.R2Sequence;
  const R3=typeof module!=='undefined'&&module.exports?require('./r3-sequence.js'):root.R3Sequence;
+ const S1=typeof module!=='undefined'&&module.exports?require('./s1-sequence.js'):root.S1Sequence;
  const Network=typeof module!=='undefined'&&module.exports?require('./power-network.js'):root.PowerNetwork;
  const input=(key,label,effect='trip',held=false)=>({key,label,effect,held});
  const gcbInputs=[input('OCR50','OCR 50 · 순시 과전류'),input('OCR51','OCR 51 · 한시 과전류'),input('OCGR50','OCGR 50 · 순시 지락 과전류'),input('OCGR51','OCGR 51 · 한시 지락 과전류')];
@@ -34,10 +35,10 @@
   '52-H1':{source:'752-52H1 VCB1~3.pdf',relay:'86X',trip:true,
    note:'89-H1 투입, DB_27TX·UVR1·86X 비동작 시 투입 허가. 89-H1은 52-H1 개방 중에만 조작합니다. UVR1 단독은 투입 억제이며, DB_27TX는 트립 입력입니다.',
    inputs:[input('OCR50','OCR 50 · 순시 과전류'),input('OCR51','OCR 51 · 한시 과전류'),input('SGR','SGR · 선택 지락','trip',true),input('DB_27TX','DB_27TX 입력 (DB1에서도 연동)'),input('UVR1','UVR1 · 2차 무전압','inhibit'),input('EXTINGUISHER','29AL · 소화기 경보','indication')]},
-  '52-1':{source:'752-52S1 GCB1~3.pdf (기기명 52-1)',relay:'G86X',trip:true,
-   note:'파일명 52S1은 도면 본문의 52-1에 연결했습니다. NEG 단로기 입력은 화면 밖 외부 접점입니다. DI35의 HSCB_A/B 표기가 달라 54-1 투입 중 재투입은 보류합니다. 54-1 조작은 확인된 AC 연동만 적용합니다.',
-   inputs:[...gcbInputs,input('UVR1','UVR1 · 부족전압'),input('TR26TP','TR26TP · SRTR1 온도 트립'),input('REC26TP','REC26TP · REC1 온도 트립'),input('REC_FAULT','REC_FAULT · 정류기 고장'),input('HSCB_FAULT','HSCB_FAULT · 54-1 고장 (1초)','delayed'),input('FIRE','29X · 화재 신호'),...gas,input('TR26AL','TR26AL · SRTR1 온도 경보','indication'),input('REC26AL','REC26AL · REC1 온도 경보','indication'),input('REC_TEMP_AL','REC_TEMP_AL · 정류기 온도 경보','indication'),input('REC_DIODE_AL','REC_DIODE_AL · 다이오드 경보','indication'),input('EXTINGUISHER','29AL · 소화기 경보','indication')],
-   external:[{...input('NEG_A','89-N1 NEG 단로기 투입 접점','external'),initial:true}]},
+  '52-1':{source:'52s1.src · RUN/TEST 직접 조작 / G86X / HSCB 연동',relay:'G86X',trip:true,
+   note:'RUN 투입은 NEG 단로기 투입·54-1 개방·G86X 비동작이 필요하며 수동 개방도 54-1 개방이 필요합니다. TEST는 개별 조작이며 주회로에서 분리됩니다. 보호·TRIP_TEST1은 수동 개방 조건을 우회합니다. HSCB 고장 입력은 즉시 시작하는 1초 TP 펄스로 트립합니다. OVR·29AL은 G86X 보호 OR에 없습니다.',
+   inputs:[...gcbInputs,input('UVR1','UVR1 · 부족전압'),input('TR26TP','TR26TP · SRTR1 온도 트립'),input('REC26TP','REC26TP · REC1 온도 트립'),input('REC_FAULT','REC_FAULT · 정류기 고장'),input('HSCB_FAULT','HSCB_FAULT · 즉시 1초 트립 펄스','pulse'),...gas,input('OVR','OVR · 과전압 (G86X 연동 없음)','indication'),input('TR26AL','26AL · SRTR1 온도 경보','indication'),input('REC26AL','REC26AL · REC1 온도 경보','indication'),input('REC_TEMP_AL','REC_TEMP_AL · 정류기 온도 경보','indication'),input('REC_DIODE_AL','REC_DIODE_AL · 다이오드 경보','indication'),input('EXTINGUISHER','29AL · 소화기 경보','indication')],
+   external:[{...input('NEG_A','89-N1 NEG 단로기 투입 접점','external'),initial:true},input('TRIP_TEST','TRIP_TEST1 · 차단기 시험 개방','triptest')]},
   '52-HT':{source:'752-52HT VCB.pdf + 752-52DB1 VCB1.pdf',relay:null,trip:false,
    note:'52-DB1반의 CX2 PERMIT: 52-DB1 또는 52-DB2 중 적어도 하나가 개방되어야 투입 가능합니다. HT 자체 보호요소는 제공 도면에 없습니다.',inputs:[]}
  };
@@ -53,8 +54,8 @@
   const makeSequence=(id,profile)=>profile.create({read:closed,write:(target,value,output)=>{
    devices.get(target).closed=value;emit(target,'operation',`${target} ${value?'투입':'개방'} · 시퀀스 ${output}`);
   },emit:(kind,message)=>emit(id,kind,message),wake:process,setTimer,clearTimer});
-  const r1=makeSequence('52-R1',R1),r2=makeSequence('52-R2',R2),r3=makeSequence('52-R3',R3);
-  const sequences={'52-R1':r1,'52-R2':r2,'52-R3':r3};
+  const r1=makeSequence('52-R1',R1),r2=makeSequence('52-R2',R2),r3=makeSequence('52-R3',R3),s1=makeSequence('52-1',S1);
+  const sequences={'52-R1':r1,'52-R2':r2,'52-R3':r3,'52-1':s1};
   const dsController={'89-R1':'52-R1','89-R2':'52-R2','89-R3':'52-R3'};
   const isPowerConnected=id=>closed(id)&&(!sequences[id]||sequences[id].status().position==='RUN');
   const energized=()=>Network.energized({sources,connected:isPowerConnected});
@@ -62,7 +63,7 @@
    const hot=energized();
    for(const [id,node] of Object.entries(Network.PRIMARY)){
     const key=id.replace('52-','')+'_84X',live=hot.has(node),old=raw(id,key);
-    for(const peer of Object.keys(sequences))st(peer).inputs[key]=live;
+    for(const peer of ['52-R1','52-R2','52-R3'])st(peer).inputs[key]=live;
     if(notify&&old!==live)emit(id,'voltage',`${id.replace('52-','89-')} 1차측 ${live?'가압':'무가압'} · ${id} 84 ${live?'동작':'비동작'}`);
    }
    return hot;
@@ -88,7 +89,7 @@
    if(ready.has(key))return true;
    if(!timers.has(key))timers.set(key,setTimer(()=>{
     timers.delete(key);ready.add(key);
-    emit(key.startsWith('DB1')?'52-DB1':'52-1','timer',key.startsWith('DB1')?'52-DB1 27T · 0.5초 경과':'52-1 TP_HSCB · 1초 경과');
+    emit('52-DB1','timer','52-DB1 27T · 0.5초 경과');
     process();
    },ms));
    return false;
@@ -98,7 +99,7 @@
    for(const [id,def] of Object.entries(defs))values[id]=def.inputs.filter(d=>d.effect==='trip'&&signal(id,d.key)).map(d=>d.key);
    if(r1.getUVR()&&!values['52-R1'].includes('UVR'))values['52-R1'].push('UVR');
    const db27=delay('DB1-27T',closed('52-DB1')&&raw('52-DB1','UVR1'),500);
-   const hscb=delay('S1-HSCB',raw('52-1','HSCB_FAULT'),1000);
+   const hscb=s1.sampleFault(raw('52-1','HSCB_FAULT'));
    if(hscb)values['52-1'].push('TP_HSCB_86X');
    if(db27)values['52-DB1'].push('27TX');
    // D1 FAULT is the protection OR, not every D1 alarm. No reverse-trip loop.
@@ -114,6 +115,7 @@
     let changed=r1.evaluate({permit:r1Permit(values['52-R1']),g86x:values['52-R1'].length>0,uvr1:raw('52-R1','UVR1'),r1_84x:raw('52-R1','R1_84X')});
     changed=r2.evaluate({permit:r2Permit(values['52-R2']),g86x:values['52-R2'].length>0})||changed;
     changed=r3.evaluate({permit:r3Permit(values['52-R3']),g86x:values['52-R3'].length>0})||changed;
+    changed=s1.evaluate({permit:raw('52-1','NEG_A')&&!closed('54-1')&&!values['52-1'].length,g86x:values['52-1'].length>0,tripTest:raw('52-1','TRIP_TEST')})||changed;
     if(db1fault&&!st('52-D1').flags.has('52DB1_FAULT (수신)')){
      st('52-D1').flags.add('52DB1_FAULT (수신)');
      emit('52-D1','alarm','52-D1 · 52DB1_FAULT 수신 (표시만, 역방향 트립 없음)');
@@ -125,14 +127,15 @@
       if(!previous.get(id))emit(id,'relay',`${id} ${defs[id].relay} 동작 · ${causes.join(', ')}${defs[id].trip?'':' · 자동 트립 없음'}`);
       if(defs[id].trip&&closed(id)){
        devices.get(id).closed=false;changed=true;
-       emit(id,'trip',`${id} 보호 트립 · ${defs[id].relay}${sequences[id]?' → CB1_'+id.replace(/-/g,'')+'_OPEN':''}`);
+       emit(id,'trip',`${id} 보호 트립 · ${defs[id].relay}${sequences[id]?' → '+(sequences[id].status().openOutput||'CB1_'+id.replace(/-/g,'')+'_OPEN'):''}`);
       }
      }
      previous.set(id,causes.length>0);
     }
-    if(closed('54-1')&&(!closed('52-1')||raw('52-1','UVR1'))){
+    const s1Outputs=s1.feedback({uvr1:raw('52-1','UVR1')});
+    if(closed('54-1')&&s1Outputs.hscbTrip){
      devices.get('54-1').closed=false;changed=true;
-     emit('54-1','trip','54-1 개방 · 52-1 HSCB_TX 연동');
+     emit('54-1','trip','54-1 개방 · 52-1 HSCB_TRIP → DO15_HSCB_TRIP');
     }
     if(!changed)break;
    }
@@ -151,14 +154,15 @@
     return result;
    }
    if(id==='89-H1')return [check(!closed('52-H1'),'52-H1 개방 필요','52H1 VCB1 · RX05/RX06, VCB3')];
-   if(id==='54-1')return closing?[check(closed('52-1'),'52-1 투입 필요','52S1 GCB1 · HSCB CX PERMIT'),check(!raw('52-1','UVR1'),'52-1 UVR1 비동작 필요','52S1 GCB1 · HSCB CX PERMIT')]:[];
+   if(id==='54-1')return closing?[check(closed('52-1'),'52-1 투입 필요','52s1.src · 행 39 / DI01_52S1_A'),check(!raw('52-1','UVR1'),'52-1 UVR1 비동작 필요','52s1.src · 행 39 / UVR1 b접점')]:[];
    if(!defs[id])return [];
    if(!closing){
     if(id==='52-D1')return [check(!closed('52-DB1'),'52-DB1을 먼저 개방하세요','52D1 GCB1 · TX / DI23 b접점')];
-    if(id==='52-1')return [check(!closed('54-1'),'54-1을 먼저 개방하세요','52S1 GCB1 · TX / DI36 HSCB_B')];
+    if(id==='52-1'&&s1.status().position==='RUN')return [check(!closed('54-1'),'54-1을 먼저 개방하세요','52s1.src · 행 33 / DI36_HSCB_B')];
     return [];
    }
    const result=[];
+   if(id==='52-1'&&s1.status().position==='TEST')return [];
    if(defs[id].relay)result.push(check(!active[id].length,`${defs[id].relay} 비동작 필요`,defs[id].source));
    if(id==='52-R1'&&r1.status().position==='RUN')result.push(
     check(!closed('52-R2')||!raw(id,'R2_84X'),'52-R2 개방 또는 R2 84X 비동작 필요','52R1 GCB1 · CX PERMIT / DI21·DI22'),
@@ -173,7 +177,7 @@
    if(id==='52-DB1')result.push(check(closed('52-D1'),'52-D1 투입 필요','52DB1 VCB1 · CX1 PERMIT / DI21'),check(!closed('52-HT'),'52-HT 개방 경로 사용 · 투입 중 분기는 도면 확인 필요','52DB1 VCB1 · CX1 PERMIT / DI03'));
    if(id==='52-HT')result.push(check(!closed('52-DB1')||!closed('52-DB2'),'52-DB1 또는 52-DB2 중 하나 이상 개방 필요','52DB1 VCB1 · CX2 PERMIT / DI01·DI13 b접점 병렬'));
    if(id==='52-H1')result.push(check(closed('89-H1'),'89-H1 투입 필요','52H1 VCB1 · CX PERMIT / DI03'),check(!raw(id,'DB_27TX'),'DB_27TX 비동작 필요','52H1 VCB1 · DI11'),check(!raw(id,'UVR1'),'UVR1 비동작 필요','52H1 VCB1 · CX PERMIT'));
-   if(id==='52-1')result.push(check(raw(id,'NEG_A'),'외부 89-N1 투입 접점 필요','52S1 GCB1 · CX PERMIT / DI31'),check(!closed('54-1'),'54-1 개방 경로 사용 · DI35의 A/B 표기 확인 필요','52S1 GCB1 · CX PERMIT / DI35'));
+   if(id==='52-1')result.push(check(raw(id,'NEG_A'),'외부 89-N1 투입 접점 필요','52s1.src · 행 28 / DI31_NEG_DS_A'),check(!closed('54-1'),'54-1 개방 필요','52s1.src · 행 28 / DI36_HSCB_B'));
    return result;
   }
   function request(id){
@@ -211,14 +215,14 @@
    if(spec.readOnly)throw new Error('Voltage-derived input: '+id+'/'+key+'; change the line source or switch state.');
    const enabled=!!value;if(state.inputs[key]===enabled)return;
    state.inputs[key]=enabled;
-   if(enabled&&spec.effect!=='external')state.flags.add(key);
+   if(enabled&&!['external','pulse','triptest'].includes(spec.effect))state.flags.add(key);
    emit(id,'input',`${id} ${key} ${enabled?'동작':'해제'}`);process();
   }
   function resetIndicators(id){
    if(!defs[id])return {ok:false,message:'보호 모의 대상이 아닙니다.'};
    // Held contacts can be reset after their originating inputs are removed.
-   const nonHeld=defs[id].inputs.some(d=>raw(id,d.key));
-   const derivedActive=(id==='52-R1'&&r1.getUVR())||(id==='52-D1'&&outputs().db1fault)||(id==='52-DB1'&&outputs().values['52-D1'].length)||(id==='52-H1'&&outputs().db27);
+   const nonHeld=defs[id].inputs.some(d=>raw(id,d.key)&&!(id==='52-1'&&d.key==='HSCB_FAULT'));
+   const derivedActive=(id==='52-R1'&&r1.getUVR())||(id==='52-1'&&s1.status().pulse)||(id==='52-D1'&&outputs().db1fault)||(id==='52-DB1'&&outputs().values['52-D1'].length)||(id==='52-H1'&&outputs().db27);
    if(nonHeld||derivedActive){const message=`${id} 복귀 불가 · 동작 중인 원인 신호를 먼저 해제하세요`;emit(id,'blocked',message);onChange();return {ok:false,message};}
    st(id).flags.clear();emit(id,'reset',`${id} 표시기억 복귀`);process();return {ok:true,message:`${id} 표시기억을 복귀했습니다.`};
   }
@@ -232,13 +236,14 @@
    syncVoltage();
    const def=defs[id];if(!def)return {supported:false,checks:checks(id)};
    const out=outputs();
+   if(id==='52-1')s1.feedback({uvr1:raw('52-1','UVR1')});
    const received=[];
    if(id==='52-D1'&&out.db1fault)received.push('52DB1_FAULT 수신 · 표시만');
    if(id==='52-DB1'&&out.values['52-D1'].length)received.push('52D1_FAULT 수신 · 트립 입력');
    if(id==='52-H1'&&out.db27)received.push('DB_27TX 수신 · 트립 입력');
-   return {supported:true,def,received,sequence:sequences[id]?.status()||null,inputs:{...st(id).inputs},flags:[...st(id).flags],active:out.values[id],checks:checks(id),pending:[...timers.keys()].filter(k=>id==='52-DB1'?k==='DB1-27T':id==='52-1'?k==='S1-HSCB':false)};
+   return {supported:true,def,received,sequence:sequences[id]?.status()||null,inputs:{...st(id).inputs},flags:[...st(id).flags],active:out.values[id],checks:checks(id),pending:[...timers.keys()].filter(k=>id==='52-DB1'?k==='DB1-27T':false)};
   }
-  return {request,commandSequence,configureSequence,commandR1:(action,origin)=>commandSequence('52-R1',action,origin),configureR1:(key,value)=>configureSequence('52-R1',key,value),commandR2:(action,origin)=>commandSequence('52-R2',action,origin),configureR2:(key,value)=>configureSequence('52-R2',key,value),commandR3:(action,origin)=>commandSequence('52-R3',action,origin),configureR3:(key,value)=>configureSequence('52-R3',key,value),setSource,powerStatus,setInput,resetIndicators,reset,status,checks,definitions:defs,isPowerConnected};
+  return {request,commandSequence,configureSequence,commandR1:(action,origin)=>commandSequence('52-R1',action,origin),configureR1:(key,value)=>configureSequence('52-R1',key,value),commandR2:(action,origin)=>commandSequence('52-R2',action,origin),configureR2:(key,value)=>configureSequence('52-R2',key,value),commandR3:(action,origin)=>commandSequence('52-R3',action,origin),configureR3:(key,value)=>configureSequence('52-R3',key,value),commandS1:(action,origin)=>commandSequence('52-1',action,origin),configureS1:(key,value)=>configureSequence('52-1',key,value),setSource,powerStatus,setInput,resetIndicators,reset,status,checks,definitions:defs,isPowerConnected};
  }
  root.ACProtection={create,definitions:defs};
  if(typeof module!=='undefined'&&module.exports)module.exports=root.ACProtection;

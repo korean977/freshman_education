@@ -30,6 +30,8 @@ jobs:
         run: node tests/r3-sequence.test.js
       - name: Verify primary-side voltage and 84 relays
         run: node tests/primary-voltage.test.js
+      - name: Verify S1 source logic
+        run: node tests/s1-sequence.test.js
       - name: Package static website
         run: python3 scripts/build_site.py
       - name: Upload website artifact

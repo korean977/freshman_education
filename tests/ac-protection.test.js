@@ -140,15 +140,15 @@ test('52S1 maps to 52-1; NEG input and AC→HSCB permitting/opening are enforced
  model.setInput('52-1','REC26TP',true);
  assert.equal(devices.get('52-1').closed,false);assert.equal(devices.get('54-1').closed,false);
 });
-test('HSCB fault needs 1 second, independent of 500ms alarm pulses elsewhere',()=>{
+test('source HSCB fault starts an immediate 1s TP pulse, rather than a 1s delay',()=>{
  const {model,devices,close,tick}=setup();close('52-1');
- model.setInput('52-1','HSCB_FAULT',true);tick(999);assert.equal(devices.get('52-1').closed,true);
- tick(1);assert.equal(devices.get('52-1').closed,false);
+ model.setInput('52-1','HSCB_FAULT',true);assert.equal(devices.get('52-1').closed,false);tick(999);assert.equal(model.status('52-1').active.includes('TP_HSCB_86X'),true);
+ tick(1);assert.equal(model.status('52-1').active.includes('TP_HSCB_86X'),false);
 });
 test('global reset cancels timers and clears indicators; no delayed trip after reset',()=>{
  const {model,devices,close,tick,pending}=setup();close('52-1');model.setInput('52-1','HSCB_FAULT',true);
  tick(300);model.reset();assert.equal(pending.size,0);tick(2000);
- assert.equal(devices.get('52-1').closed,true);assert.deepEqual(model.status('52-1').flags,[]);
+ assert.equal(devices.get('52-1').closed,false);assert.deepEqual(model.status('52-1').flags,[]);
  assert.equal(model.status('52-1').inputs.NEG_A,true);
 });
 test('invalid inputs are rejected; unmodeled devices retain basic operation only',()=>{

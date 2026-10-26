@@ -1,0 +1,106 @@
+{
+  "source": "52s1.src; PKWARE DCL decoded; 158 symbols, 71 local addresses and 59 PCI/YMS ranges checked; SRC/BAK ladder identical",
+  "run_close": {
+    "row": 28,
+    "required": [
+      "NEG_A",
+      "HSCB_B",
+      "NOT_G86X"
+    ]
+  },
+  "run_open": {
+    "row": 33,
+    "required": [
+      "HSCB_B"
+    ]
+  },
+  "test": {
+    "rows": [
+      31,
+      32,
+      35,
+      36
+    ],
+    "manual_bypasses": [
+      "NEG_A",
+      "HSCB_B",
+      "G86X_CX_PERMIT"
+    ],
+    "open_priority": [
+      "G86X",
+      "TRIP_TEST1"
+    ]
+  },
+  "g86x": {
+    "rows": [
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51,
+      52
+    ],
+    "or_inputs": [
+      "OCR50",
+      "OCR51",
+      "OCGR50",
+      "OCGR51",
+      "UVR1",
+      "G63CB_TP2_F",
+      "DI22_SRTR_26TP",
+      "DI24_REC_26TP",
+      "DI38_REC_FAULT",
+      "TP_HSCB_86X"
+    ]
+  },
+  "mapping": {
+    "OCR50": "OCR50",
+    "OCR51": "OCR51",
+    "OCGR50": "OCGR50",
+    "OCGR51": "OCGR51",
+    "UVR1": "UVR1",
+    "G63CB_TP2_F": "GAS2",
+    "DI22_SRTR_26TP": "TR26TP",
+    "DI24_REC_26TP": "REC26TP",
+    "DI38_REC_FAULT": "REC_FAULT",
+    "TP_HSCB_86X": "HSCB_FAULT"
+  },
+  "indication_only": [
+    "GAS1",
+    "OVR",
+    "TR26AL",
+    "REC26AL",
+    "REC_TEMP_AL",
+    "REC_DIODE_AL",
+    "EXTINGUISHER"
+  ],
+  "hscb_pulse": {
+    "row": 88,
+    "function": "TP",
+    "instance": "TP_HSCB",
+    "preset": "T#1S",
+    "ms": 1000,
+    "retriggerable": false
+  },
+  "hscb_permit": {
+    "row": 39,
+    "expression": "CB_A AND NOT UVR1"
+  },
+  "hscb_trip": {
+    "rows": [
+      40,
+      41
+    ],
+    "expression": "NOT CB_A OR UVR1"
+  },
+  "outputs": {
+    "close": "CB1_52S1_CLOSE",
+    "open": "CB1_52S1_OPEN",
+    "permit": "DO14_HSCB_PERMIT",
+    "trip": "DO15_HSCB_TRIP"
+  }
+}

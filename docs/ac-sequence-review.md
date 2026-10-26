@@ -1,10 +1,10 @@
 # AC 시퀀스 1차 적용 기록
 
-52-R1·52-R2·52-R3는 각각의 프로젝트 소스의 RUN 투입·개방 순차 조작, TEST 개별 조작, LOCAL/REMOTE 경로, 보호 접점과 타이머를 적용한다. 다른 반은 도면에서 확인된 RUN 투입 허가·수동 개방 제한·보호 접점 연동이다. 제어전원/스프링이 정상인 교육 조건이며, 전체 자동 전원 절체·기계적 인터록·정정치 계산·DC 상세 보호는 포함하지 않는다.
+52-R1·52-R2·52-R3는 각각의 프로젝트 소스의 RUN 투입·개방 순차 조작, TEST 개별 조작, LOCAL/REMOTE 경로, 보호 접점과 타이머를 적용한다. 52-1은 52s1.src의 RUN/TEST 직접 조작과 HSCB 연동을 적용한다. 다른 반은 도면에서 확인된 RUN 투입 허가·수동 개방 제한·보호 접점 연동이다. 제어전원/스프링이 정상인 교육 조건이며, 전체 자동 전원 절체·기계적 인터록·정정치 계산·DC 상세 보호는 포함하지 않는다.
 
 `ac-protection.js`의 입력은 이미 동작한 계전 출력 접점이다. 따라서 OCR51 체크가 바로 반응하는 것은 정정 시간을 0초로 설정했다는 뜻이 아니다. 도면의 500 ms `TP_OCR50`, `TP_OCR51` 등은 경보 출력 쪽 펄스이며 보호요소의 동작 시간으로 쓰지 않았다.
 
-도면 PDF 17개와 52r1·52r2·52r3 프로젝트 파일을 검토했으나 원본은 저장소에 게시하지 않았다. 아래 파일명은 사용자가 제공한 원본을 가리킨다. 각각 1페이지다.
+도면 PDF 17개와 52r1·52r2·52r3·52s1 프로젝트 파일을 검토했으나 원본은 저장소에 게시하지 않았다. 아래 파일명은 사용자가 제공한 원본을 가리킨다. 각각 1페이지다.
 
 ## 도면 및 적용
 
@@ -16,7 +16,7 @@
 | 752-52D1 GCB1~3.pdf | 52-DB1 개방 및 G86X 비동작 조건에서 투입. 수동 개방도 RUN + DB1 b접점 필요. OCR50/51, OCGR50/51, 87T_F, 29X_F, 63G2_F → 52D1_FAULT → G86X. | 확인된 G86X → TX 분기로 52-D1 개방. 수동 개방 제한은 보호 트립에 적용하지 않음. |
 | 752-52DB1 VCB1~3.pdf | D1 a접점, G86X b접점 및 HT b접점의 직접 CX1 PERMIT 경로. OCR50/51, 27TX, D1_FAULT → 86X. `UVR1 && DB1_A`가 0.5초 유지되면 27T → 27TX. | 86X → TX1. D1 FAULT 수신 시 DB1 개방. DB1의 자체 OCR FAULT는 D1반에 경보만 전달하고 D1을 역방향 트립시키지 않음. |
 | 752-52H1 VCB1~3.pdf | CX PERMIT: 89-H1 a, DB_27TX b, UVR1 b, 86X b. OCR50/51, SGR_F, DB_27TX → 86X. 89-H1은 52-H1 개방 중 조작. | 86X → TX1. DB1의 27TX 펄스를 같은 평가 단계에서 H1에 전달. H1의 UVR1 단독은 투입 억제이며 자체 트립 원인으로 추가하지 않음. |
-| 752-52S1 GCB1~3.pdf | 파일명의 52S1은 본문 기기명 **52-1**. NEG DS_A 및 G86X 조건. 수동 개방은 54-1 개방 필요. OCR50/51, OCGR50/51, UVR1, TR26TP, REC26TP, REC_FAULT, 63G2_F, 29X, TP_HSCB_86X → G86X. HSCB_FAULT 1초 → TP_HSCB_86X. | G86X → TX. 52-1 a접점 및 UVR1 b접점은 HSCB CX PERMIT. 52-1 개방 또는 UVR1 동작은 HSCB_TX → 54-1 개방. 전체 DC 보호는 아님. |
+| 752-52S1 GCB1~3.pdf 및 **52s1.src** | 소스 DI31_NEG_DS_A·DI36_HSCB_B·G86X 조건으로 RUN 투입. RUN 수동 개방은 HSCB_B, TEST는 개별 조작. OCR50/51, OCGR50/51, UVR1, 63G2_F, TR26TP, REC26TP, REC_FAULT, TP_HSCB_86X → G86X. HSCB_FAULT는 **즉시 1초 TP 펄스**. OVR·29AL은 비트립. | G86X 또는 TRIP_TEST1 → G52TX → CB1_52S1_OPEN. HSCB_CX_PERMIT와 HSCB_TRIP을 54-1에 연결. 전체 DC 보호는 아님. |
 | 752-52HT VCB.pdf 및 752-52DB1 VCB1.pdf | HT 명령은 DB1반에서 발생. RUN CX2 PERMIT은 DB1 b접점과 DB2 b접점 병렬: `!DB1_A || !DB2_A`. | 자체 보호요소를 임의로 추가하지 않음. |
 
 세 프로젝트 모두 사용자 확인에 따라 TEST에서는 CB 투입 중에도 DS 개방이 가능하다. TEST DS 투입은 CB 개방이 필요하며, RUN은 CB 개방 후 DS 개방 순서를 유지한다.
@@ -31,7 +31,7 @@
 ## 확인이 필요한 경로
 
 1. **DB1 CX1 PERMIT 우측 병렬 분기:** DI13 `52DB2_A` 및 DI03 `52HT_A` 표기와 되돌아가는 접속선에 해석상 불확실성이 있다. HT 개방 시의 직접 경로만 허용하고, HT 투입 중 DB1 투입은 '도면 확인 필요'로 보류한다. 흔히 쓰이는 일반적인 2-out-of-3 회로를 추정해 대신 넣지 않았다.
-2. **52S1 DI35:** 상단 입력 표기는 HSCB_A인데 CX PERMIT에서는 HSCB_B로 기재되어 있다. 54-1 개방인 확인 가능한 상태에서만 RUN 투입을 허용하고, 54-1 투입 중 경로는 보류한다. 수동 개방 회로의 DI36 HSCB_B는 별도로 확인된다.
+2. **52S1 적용 범위:** 소스의 DI36_HSCB_B로 RUN 투입·수동 개방 조건이 확인됐다. 전체 DC 보호와 모든 경보·부저 출력은 범위 밖이다. 상세는 [52s1 소스 적용](52s1-source-logic.md)을 참조한다.
 3. **D1 TR26TP와 DB1 FAULT:** 입력·표시 경로는 있으나 제공된 G86X 보호 OR에 직접 들어가는 접점은 보이지 않는다. 임의로 자동 트립 원인에 넣지 않았다.
 4. **DB1 64T/OVGR:** CC4 및 표시 경로는 확인되지만 86X 보호 OR에는 보이지 않는다. 표시만 적용했다.
 5. **R1/R2/R3 범위:** RUN 투입·개방 순차 동작, TEST/LOCAL·REMOTE 경로, 27X·84X 타이머를 소스 기준으로 적용했다. 전체 전원 자동 절체나 모든 경보 출력의 완전한 PLC 재현을 의미하지는 않는다. 상세는 [52r1 소스 적용 범위](52r1-source-logic.md)·[52r2 소스 적용 범위](52r2-source-logic.md)·[52r3 소스 적용 범위](52r3-source-logic.md)를 참조한다.
@@ -45,6 +45,7 @@ node tests/r1-sequence.test.js
 node tests/r2-sequence.test.js
 node tests/r3-sequence.test.js
 node tests/primary-voltage.test.js
+node tests/s1-sequence.test.js
 ```
 
 정방향/역방향 인터록, 보호 트립의 수동 제한 우회, D1→DB1 전파, 역방향 경보, H1 DS 조건, 소스 기준 R1 트립·경보 구분 및 R2/R3 84X 진리표, 0.5초/1초 타이머와 취소, 원인 해제/표시기억 복귀 및 초기화 후 지연 동작 방지를 검증한다. UI는 상대 경로로 JS/CSS를 읽으며 GitHub Pages와 다운로드한 정적 파일 모두 사용 가능하다.

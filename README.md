@@ -10,6 +10,8 @@
 
 온수 측 연계선은 좌측 변전소에서 공급받아 **89-R2 1차측이 항상 가압**되며 전원을 끌 수 없습니다. R2·R3의 84는 각각 **89-R2·89-R3 1차측(단로기 앞 연계선 측)** 전압으로 자동 결정됩니다. 따라서 89-R2가 개방돼도 R2의 84는 동작합니다. 상동 측 외부 전원만 가압 여부를 설정할 수 있으며 초기에는 무가압입니다. 상동 측은 89·52가 연결된 경우 모선 측 역가압도 반영합니다. [전압 감지와 시퀀스 적용](docs/primary-voltage.md)을 참조하세요.
 
+52-1은 [52s1 소스 기록](docs/52s1-source-logic.md)에 따른 RUN/TEST·LOCAL/REMOTE 직접 조작과 54-1 AC 연동을 지원합니다. HSCB 고장 신호는 즉시 시작하는 1초 TP 펄스로 트립하며, RUN 투입은 NEG 투입·54-1 개방 조건을, RUN 수동 개방은 54-1 개방 조건을 사용합니다.
+
 ## 검증 및 배포 파일
 
 ```sh
@@ -18,6 +20,7 @@ node tests/r1-sequence.test.js
 node tests/r2-sequence.test.js
 node tests/r3-sequence.test.js
 node tests/primary-voltage.test.js
+node tests/s1-sequence.test.js
 python3 scripts/build_site.py
 ```
 

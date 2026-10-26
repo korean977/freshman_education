@@ -5,7 +5,7 @@ from html.parser import HTMLParser
 from urllib.parse import urlsplit,unquote
 import argparse,json,subprocess
 ROOT=Path(__file__).resolve().parents[1]
-ASSETS=('index.html','power.html','ac-training.css','ac-protection.js','breaker-sequence.js','r1-sequence.js','r2-sequence.js','r3-sequence.js','power-network.js')
+ASSETS=('index.html','power.html','ac-training.css','ac-protection.js','breaker-sequence.js','r1-sequence.js','r2-sequence.js','r3-sequence.js','power-network.js','s1-sequence.js')
 class References(HTMLParser):
  def __init__(self):super().__init__();self.paths=[]
  def handle_starttag(self,tag,attrs):
